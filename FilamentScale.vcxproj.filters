@@ -24,5 +24,8 @@
     <ClInclude Include="fonts.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="RotaryDialButton.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

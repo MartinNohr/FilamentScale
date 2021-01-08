@@ -1,7 +1,7 @@
 /*
  Name:		FilamentScale.ino
  Created:	1/2/2021 6:20:25 PM
- Author:	martin
+ Author:	martin nohr
 */
 
 /*
@@ -23,6 +23,12 @@
 
    This is an example sketch on how to use this library
 */
+#include <array>
+#define DIAL_BTN 15
+#define DIAL_A 12
+#define DIAL_B 13
+#define FRAMEBUTTON 22
+#include "RotaryDialButton.h"
 
 #include <HX711_ADC.h>
 #include <EEPROM.h>
@@ -44,7 +50,7 @@ const int HX711_sck = 22; //mcu > HX711 sck pin
 
 //HX711 constructor:
 HX711_ADC LoadCell(HX711_dout, HX711_sck);
-
+// where to store the calibration value
 const int calVal_calVal_eepromAdress = 0;
 long t;
 
@@ -52,6 +58,7 @@ void setup() {
     Serial.begin(115200); delay(10);
     Serial.println();
     Serial.println("Starting...");
+    CRotaryDialButton::getInstance()->begin(DIAL_A, DIAL_B, DIAL_BTN);
     tft.init();
     // configure LCD PWM functionalitites
     pinMode(TFT_ENABLE, OUTPUT);
@@ -63,14 +70,11 @@ void setup() {
     tft.fillScreen(TFT_BLACK);
     tft.setRotation(3);
     tft.setFreeFont(&Dialog_bold_16);
-    DisplayLine(1, "Remaining Filament");
+    DisplayLine(1, "Filament");
 
     float calibrationValue; // calibration value
     calibrationValue = 696.0; // uncomment this if you want to set this value in the sketch
-#if defined(ESP8266) || defined(ESP32)
   //EEPROM.begin(512); // uncomment this if you use ESP8266 and want to fetch this value from eeprom
-#endif
-  //EEPROM.get(calVal_eepromAdress, calibrationValue); // uncomment this if you want to fetch this value from eeprom
 
     LoadCell.begin();
     long stabilizingtime = 2000; // tare preciscion can be improved by adding a few seconds of stabilizing time
