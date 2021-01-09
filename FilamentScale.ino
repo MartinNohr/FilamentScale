@@ -23,7 +23,7 @@
 
    This is an example sketch on how to use this library
 */
-#include <array>
+#include <vector>
 #define DIAL_BTN 15
 #define DIAL_A 12
 #define DIAL_B 13
@@ -54,6 +54,14 @@ HX711_ADC LoadCell(HX711_dout, HX711_sck);
 const int calVal_calVal_eepromAdress = 0;
 long t;
 
+// storage for each filament spool
+struct FILSPOOL {
+    int spoolWeight;
+    int remainingWeight;
+};
+typedef FILSPOOL FilSpool;
+std::vector<FilSpool>SpoolArray;
+
 void setup() {
     Serial.begin(115200); delay(10);
     Serial.println();
@@ -77,10 +85,13 @@ void setup() {
   //EEPROM.begin(512); // uncomment this if you use ESP8266 and want to fetch this value from eeprom
 
     LoadCell.begin();
-    long stabilizingtime = 2000; // tare preciscion can be improved by adding a few seconds of stabilizing time
+    long stabilizingtime = 2000; // tare precision can be improved by adding a few seconds of stabilizing time
     boolean _tare = true; //set this to false if you don't want tare to be performed in the next step
     LoadCell.start(stabilizingtime, _tare);
     if (LoadCell.getTareTimeoutFlag()) {
+        tft.setTextColor(TFT_RED);
+        tft.setCursor(0, 15);
+        tft.println("Load Cell Failed");
         Serial.println("Timeout, check MCU>HX711 wiring and pin designations");
     }
     else {
