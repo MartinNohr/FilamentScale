@@ -56,11 +56,13 @@ long t;
 
 // storage for each filament spool
 struct FILSPOOL {
-    int spoolWeight;
-    int remainingWeight;
+    int spoolWeight;        // in grams
+    int remainingWeight;    // in grams
+    int spoolWidth;         // in mm
 };
 typedef FILSPOOL FilSpool;
 std::vector<FilSpool>SpoolArray;
+int nActiveSpool = 0;
 
 void setup() {
     Serial.begin(115200); delay(10);
@@ -78,10 +80,10 @@ void setup() {
     tft.fillScreen(TFT_BLACK);
     tft.setRotation(3);
     tft.setFreeFont(&Dialog_bold_16);
-    DisplayLine(1, "Filament");
 
     float calibrationValue; // calibration value
-    calibrationValue = 696.0; // uncomment this if you want to set this value in the sketch
+    //calibrationValue = 696.0; // uncomment this if you want to set this value in the sketch
+    calibrationValue = 335; // uncomment this if you want to set this value in the sketch
   //EEPROM.begin(512); // uncomment this if you use ESP8266 and want to fetch this value from eeprom
 
     LoadCell.begin();
@@ -131,7 +133,14 @@ void loop() {
             Serial.println(i);
             newDataReady = 0;
             t = millis();
-			DrawProgressBar(0, 0, tft.width() - 1, 12, (int)(i * tft.width() / 1500));
+            int percent = (int)(i * tft.width() / 1500);
+            percent = constrain(percent, 0, 100);
+			DrawProgressBar(0, 0, tft.width() - 1, 12, percent);
+            String st;
+            st = "Filament: " + String(percent) + "%";
+            DisplayLine(1, st);
+            st = "Raw: " + String(i);
+            DisplayLine(2, st);
         }
     }
 
