@@ -1,6 +1,9 @@
 #pragma once
-#include <queue>
 #include <esp_timer.h>
+#define DIAL_BTN 15
+#define DIAL_A 12
+#define DIAL_B 13
+#define FRAMEBUTTON 22
 
 class CRotaryDialButton {
 public:
