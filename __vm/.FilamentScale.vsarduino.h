@@ -20,7 +20,7 @@
 #define GCC_NOT_5_2_0 0
 #define WITH_POSIX
 #define F_CPU 240000000L
-#define ARDUINO 108013
+#define ARDUINO 108012
 #define ARDUINO_TTGO_T1
 #define ARDUINO_ARCH_ESP32
 #define ESP32
@@ -51,7 +51,7 @@
 #define _Lockit
 #define __CLR_OR_THIS_CALL
 #define C4005
-#define _NEW
+//#define _NEW
 
 typedef bool _Bool;
 typedef int _read;
@@ -79,7 +79,8 @@ extern "C" void __cxa_pure_virtual() {;}
 
 typedef long __INTPTR_TYPE__ ;
 typedef long __UINTPTR_TYPE__ ;
-typedef long __SIZE_TYPE__ 	;
+//typedef long __SIZE_TYPE__ 	;
+#define __SIZE_TYPE__ unsigned int
 typedef long __PTRDIFF_TYPE__;
 
 typedef long pthread_t;
@@ -99,6 +100,10 @@ typedef long pthread_cond_t;
 
 #define ESP_LOGI(tag, ...)
 
+// Read Value from Register
+#define READ_PERI_REG(addr)
+// Write Value to Register
+#define WRITE_PERI_REG(addr,val)
 #include "FilamentScale.ino"
 #endif
 #endif

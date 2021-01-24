@@ -27,5 +27,13 @@
     <ClInclude Include="RotaryDialButton.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="menus.h">
+      <Filter>Resource Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="menus.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
