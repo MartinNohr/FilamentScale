@@ -31,15 +31,7 @@
 #include <stack>
 #include <queue>
 #include "RotaryDialButton.h"
-
-//#include <Arduino.h>
-
-//#include <time.h>
-//#include "SPI.h"
-//
-//#include <EEPROM.h>
-//#include "RotaryDialButton.h"
-//#include <TFT_eSPI.h>
+#include "fonts.h"
 
 // use these to control the LCD brightness
 const int freq = 5000;
@@ -53,11 +45,7 @@ const int resolution = 8;
 #define BTN_RIGHT   CRotaryDialButton::BTN_RIGHT
 #define BTN_LONG    CRotaryDialButton::BTN_LONGPRESS
 
-CRotaryDialButton::Button ReadButton();
-
 // display things
-#include <TFT_eSPI.h>
-#include "fonts.h"
 TFT_eSPI tft = TFT_eSPI();       // Invoke custom library
 #define TFT_ENABLE 4
 
