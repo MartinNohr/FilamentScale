@@ -3,71 +3,22 @@
  Created:	01/20/2021 6:12:01 PM
  Author:	Martin Nohr
 */
+#include "menus.h"
 
-#define TFT_ENABLE 4
-// use these to control the LCD brightness
-const int freq = 5000;
-const int ledChannel = 0;
-const int resolution = 8;
-
-void setup()
+// draw a progress bar
+void DrawProgressBar(int x, int y, int dx, int dy, int percent)
 {
-	Serial.begin(115200);
-	delay(10);
-	tft.init();
-	// configure LCD PWM functionalitites
-	pinMode(TFT_ENABLE, OUTPUT);
-	digitalWrite(TFT_ENABLE, 1);
-	ledcSetup(ledChannel, freq, resolution);
-	// attach the channel to the GPIO to be controlled
-	ledcAttachPin(TFT_ENABLE, ledChannel);
-	SetDisplayBrightness(nDisplayBrightness);
-
-	EEPROM.begin(1024);
-	menuPtr = new MenuInfo;
-	MenuStack.push(menuPtr);
-	MenuStack.top()->menu = MainMenu;
-	MenuStack.top()->index = 0;
-	MenuStack.top()->offset = 0;
-
-	// clear the button buffer
-	CRotaryDialButton::getInstance()->clear();
-}
-
-void loop()
-{
-	static bool didsomething = false;
-	bool lastStrip = bSecondStrip;
-	didsomething = bSettingsMode ? HandleMenus() : HandleRunMode();
-	server.handleClient();
-	// wait for no keys
-	if (didsomething) {
-		didsomething = false;
-		delay(1);
-	}
-	static bool bButton0 = false;
-	if (bButton0) {
-		if (digitalRead(0) == 1)
-			bButton0 = false;
-	}
-	if (!bButton0 && digitalRead(0) == 0) {
-		ShowBmp(NULL);
-		bButton0 = true;
-		// restore the screen to what it was doing before the bmp display
-		if (bSettingsMode) {
-			ShowMenu(MenuStack.top()->menu);
-		}
-		else {
-			tft.fillScreen(TFT_BLACK);
-			DisplayCurrentFile(bShowFolder);
-		}
-	}
+	percent = constrain(percent, 0, 100);
+	tft.drawRoundRect(x, y, dx, dy, 2, TFT_WHITE);
+	int fill = (dx - 2) * percent / 100;
+	// fill the filled part
+	tft.fillRect(x + 1, y + 1, fill, dy - 2, TFT_GREEN);
+	// blank the empty part
+	tft.fillRect(x + 1 + fill, y + 1, dx - 2 - fill, dy - 2, TFT_BLACK);
 }
 
 bool RunMenus(int button)
 {
-	// save this so we can see if we need to save a new changed value
-	bool lastAutoLoadFlag = bAutoLoadSettings;
 	// see if we got a menu match
 	bool gotmatch = false;
 	int menuix = 0;
@@ -125,25 +76,8 @@ bool RunMenus(int button)
 					}
 				}
 				break;
-			case eBuiltinOptions: // find it in builtins
-				if (BuiltInFiles[CurrentFileIndex].menu != NULL) {
-					MenuStack.top()->index = MenuStack.top()->index;
-					MenuStack.push(new MenuInfo);
-					MenuStack.top()->menu = BuiltInFiles[CurrentFileIndex].menu;
-					MenuStack.top()->index = 0;
-					MenuStack.top()->offset = 0;
-				}
-				else {
-					WriteMessage("No settings available for:\n" + String(BuiltInFiles[CurrentFileIndex].text));
-				}
-				bMenuChanged = true;
-				break;
 			case eExit: // go back a level
 				bExit = true;
-				break;
-			case eReboot:
-				WriteMessage("Rebooting in 2 seconds\nHold button for factory reset", false, 2000);
-				ESP.restart();
 				break;
 			}
 		}
@@ -155,11 +89,6 @@ bool RunMenus(int button)
 		menuPtr = MenuStack.top();
 		MenuStack.pop();
 		delete menuPtr;
-	}
-	// see if the autoload flag changed
-	if (bAutoLoadSettings != lastAutoLoadFlag) {
-		// the flag is now true, so we should save the current settings
-		SaveSettings(true, false, true);
 	}
 }
 
@@ -221,7 +150,7 @@ void ShowMenu(struct MenuItem* menu)
 			}
 			else {
 				if (menu->op == eTextCurrentFile) {
-					sprintf(line, menu->text, MakeMIWFilename(FileNames[CurrentFileIndex], false).c_str());
+					//sprintf(line, menu->text, MakeMIWFilename(FileNames[CurrentFileIndex], false).c_str());
 					//Serial.println("menu text2: " + String(line));
 				}
 				else {
@@ -232,17 +161,17 @@ void ShowMenu(struct MenuItem* menu)
 			// next line
 			++y;
 			break;
-		case eList:
-			menu->valid = true;
-			// the list of macro files
-			// min holds the macro number
-			val = menu->min;
-			// see if the macro is there and append the text
-			exists = SD.exists("/" + String(val) + ".miw");
-			sprintf(line, menu->text, val, exists ? menu->on : menu->off);
-			// next line
-			++y;
-			break;
+		//case eList:
+		//	menu->valid = true;
+		//	// the list of macro files
+		//	// min holds the macro number
+		//	val = menu->min;
+		//	// see if the macro is there and append the text
+		//	exists = SD.exists("/" + String(val) + ".miw");
+		//	sprintf(line, menu->text, val, exists ? menu->on : menu->off);
+		//	// next line
+		//	++y;
+		//	break;
 		case eBool:
 			menu->valid = true;
 			if (menu->value) {
@@ -257,14 +186,6 @@ void ShowMenu(struct MenuItem* menu)
 			}
 			// increment displayable lines
 			++y;
-			break;
-		case eBuiltinOptions:
-			// for builtins only show if available
-			if (BuiltInFiles[CurrentFileIndex].menu != NULL) {
-				menu->valid = true;
-				sprintf(line, menu->text, BuiltInFiles[CurrentFileIndex].text);
-				++y;
-			}
 			break;
 		case eMenu:
 		case eExit:
@@ -374,7 +295,7 @@ void GetIntegerValue(MenuItem* menu)
 		*(int*)menu->value = constrain(*(int*)menu->value, menu->min, menu->max);
 		// show slider bar
 		tft.fillRect(0, 2 * tft.fontHeight(), tft.width() - 1, 6, TFT_BLACK);
-		DrawProgressBar(0, 2 * charHeight + 5, tft.width() - 1, 6, map(*(int*)menu->value, menu->min, menu->max, 0, 100));
+		DrawProgressBar(0, 2 * tft.fontHeight() + 5, tft.width() - 1, 6, map(*(int*)menu->value, menu->min, menu->max, 0, 100));
 		if (menu->decimals == 0) {
 			sprintf(line, menu->text, *(int*)menu->value);
 		}
@@ -396,15 +317,15 @@ void GetIntegerValue(MenuItem* menu)
 	}
 }
 
+void SetDisplayBrightness(int val)
+{
+	ledcWrite(ledChannel, map(val, 0, 100, 0, 255));
+}
+
 void UpdateDisplayBrightness(MenuItem* menu, int flag)
 {
 	// control LCD brightness
 	SetDisplayBrightness(*(int*)menu->value);
-}
-
-void SetDisplayBrightness(int val)
-{
-	ledcWrite(ledChannel, map(val, 0, 100, 0, 255));
 }
 
 uint16_t ColorList[] = {
@@ -504,7 +425,6 @@ bool HandleMenus()
 	int lastOffset = MenuStack.top()->offset;
 	int lastMenu = MenuStack.top()->index;
 	int lastMenuCount = MenuStack.top()->menucount;
-	bool lastRecording = bRecordingMacro;
 	switch (button) {
 	case BTN_SELECT:
 		RunMenus(button);
@@ -543,7 +463,6 @@ bool HandleMenus()
 	case BTN_LONG:
 		tft.fillScreen(TFT_BLACK);
 		bSettingsMode = false;
-		DisplayCurrentFile();
 		bMenuChanged = true;
 		break;
 	default:
@@ -554,51 +473,6 @@ bool HandleMenus()
 	if (lastMenu != MenuStack.top()->index || lastOffset != MenuStack.top()->offset) {
 		bMenuChanged = true;
 		//Serial.println("menu changed");
-	}
-	// see if the recording status changed
-	if (lastRecording != bRecordingMacro) {
-		MenuStack.top()->index = 0;
-		MenuStack.top()->offset = 0;
-		bMenuChanged = true;
-	}
-	return didsomething;
-}
-
-// handle keys in run mode
-bool HandleRunMode()
-{
-	bool didsomething = true;
-	switch (ReadButton()) {
-	case BTN_SELECT:
-		bCancelRun = bCancelMacro = false;
-		ProcessFileOrTest();
-		break;
-	case BTN_RIGHT:
-		if (bAllowMenuWrap || (CurrentFileIndex < FileNames.size() - 1))
-			++CurrentFileIndex;
-		if (CurrentFileIndex >= FileNames.size())
-			CurrentFileIndex = 0;
-		DisplayCurrentFile();
-		break;
-	case BTN_LEFT:
-		if (bAllowMenuWrap || (CurrentFileIndex > 0))
-			--CurrentFileIndex;
-		if (CurrentFileIndex < 0)
-			CurrentFileIndex = FileNames.size() - 1;
-		DisplayCurrentFile();
-		break;
-		//case btnShowFiles:
-		//	bShowBuiltInTests = !bShowBuiltInTests;
-		//	GetFileNamesFromSD(currentFolder);
-		//	DisplayCurrentFile();
-		//	break;
-	case BTN_LONG:
-		tft.fillScreen(TFT_BLACK);
-		bSettingsMode = true;
-		break;
-	default:
-		didsomething = false;
-		break;
 	}
 	return didsomething;
 }
@@ -621,4 +495,13 @@ void DisplayMenuLine(int line, int displine, String text)
 	String mline = (hilite ? "*" : " ") + text;
 	if (displine < MENU_LINES)
 		DisplayLine(displine, mline, hilite ? menuLineActiveColor : menuLineColor);
+}
+
+void DisplayLine(int line, String text, int16_t color)
+{
+	int charHeight = tft.fontHeight();
+	int y = line * charHeight;
+	tft.fillRect(0, y, tft.width(), charHeight, TFT_BLACK);
+	tft.setTextColor(color);
+	tft.drawString(text, 0, y);
 }

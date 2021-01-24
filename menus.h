@@ -7,6 +7,16 @@
 //#include "RotaryDialButton.h"
 //#include <TFT_eSPI.h>
 #include <stack>
+#define DIAL_BTN 15
+#define DIAL_A 12
+#define DIAL_B 13
+#define FRAMEBUTTON 22
+#include "RotaryDialButton.h"
+
+// use these to control the LCD brightness
+const int freq = 5000;
+const int ledChannel = 0;
+const int resolution = 8;
 
 // menu code definitions
 #define BTN_SELECT  CRotaryDialButton::BTN_CLICK
@@ -17,15 +27,28 @@
 
 CRotaryDialButton::Button ReadButton();
 
+// display things
+#include <TFT_eSPI.h>
+#include "fonts.h"
+TFT_eSPI tft = TFT_eSPI();       // Invoke custom library
+#define TFT_ENABLE 4
+
 // settings
-RTC_DATA_ATTR int nDisplayBrightness = 100;           // this is in %
+int nDisplayBrightness = 100;           // this is in %
 
 bool bSettingsMode = false;     // set true when settings are displayed
 int nCurrentSpool = 0;          // the currently loaded spool
+bool bAllowMenuWrap = false;
+uint16_t menuLineColor = TFT_CYAN;
+uint16_t menuLineActiveColor = TFT_WHITE;
 
 // functions
+bool HandleMenus();
+void ShowMenu(struct MenuItem* menu);
 void GetIntegerValue(MenuItem* menu);
 void Calibrate(MenuItem* menu);
+void DisplayLine(int line, String text, int16_t color = TFT_WHITE);
+void DisplayMenuLine(int line, int displine, String text);
 
 enum eDisplayOperation {
     eText,              // handle text with optional %s value

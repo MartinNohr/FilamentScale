@@ -23,26 +23,11 @@
 
    This is an example sketch on how to use this library
 */
+#include "menus.h"
 #include <vector>
-#define DIAL_BTN 15
-#define DIAL_A 12
-#define DIAL_B 13
-#define FRAMEBUTTON 22
-#include "RotaryDialButton.h"
 
 #include <HX711_ADC.h>
 #include <EEPROM.h>
-// display things
-#include <TFT_eSPI.h>
-#include "fonts.h"
-TFT_eSPI tft = TFT_eSPI();       // Invoke custom library
-#define TFT_ENABLE 4
-// use these to control the LCD brightness
-const int freq = 5000;
-const int ledChannel = 0;
-const int resolution = 8;
-// functions
-void DisplayLine(int line, String text, int16_t color = TFT_WHITE);
 
 //pins:
 const int HX711_dout = 21; //mcu > HX711 dout pin
@@ -85,6 +70,11 @@ void setup() {
     //calibrationValue = 696.0; // uncomment this if you want to set this value in the sketch
     calibrationValue = 335; // uncomment this if you want to set this value in the sketch
   //EEPROM.begin(512); // uncomment this if you use ESP8266 and want to fetch this value from eeprom
+    menuPtr = new MenuInfo;
+    MenuStack.push(menuPtr);
+    MenuStack.top()->menu = MainMenu;
+    MenuStack.top()->index = 0;
+    MenuStack.top()->offset = 0;
 
     LoadCell.begin();
     long stabilizingtime = 2000; // tare precision can be improved by adding a few seconds of stabilizing time
@@ -116,11 +106,16 @@ void setup() {
     else if (LoadCell.getSPS() > 100) {
         Serial.println("!!Sampling rate is higher than specification, check MCU>HX711 wiring and pin designations");
     }
+    // clear the button buffer
+    CRotaryDialButton::getInstance()->clear();
 }
 
 void loop() {
     static boolean newDataReady = 0;
     const int serialPrintInterval = 500; //increase value to slow down serial print activity
+
+    static bool didsomething = false;
+    didsomething = HandleMenus();
 
     // check for new data/start next conversion:
     if (LoadCell.update()) newDataReady = true;
@@ -155,25 +150,4 @@ void loop() {
     if (LoadCell.getTareStatus() == true) {
         Serial.println("Tare complete");
     }
-}
-
-void DisplayLine(int line, String text, int16_t color)
-{
-    int charHeight = tft.fontHeight();
-    int y = line * charHeight;
-    tft.fillRect(0, y, tft.width(), charHeight, TFT_BLACK);
-    tft.setTextColor(color);
-    tft.drawString(text, 0, y);
-}
-
-// draw a progress bar
-void DrawProgressBar(int x, int y, int dx, int dy, int percent)
-{
-    percent = constrain(percent, 0, 100);
-    tft.drawRoundRect(x, y, dx, dy, 2, TFT_WHITE);
-    int fill = (dx - 2) * percent / 100;
-    // fill the filled part
-    tft.fillRect(x + 1, y + 1, fill, dy - 2, TFT_GREEN);
-    // blank the empty part
-    tft.fillRect(x + 1 + fill, y + 1, dx - 2 - fill, dy - 2, TFT_BLACK);
 }
