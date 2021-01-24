@@ -176,8 +176,8 @@ void Calibrate(MenuItem* menu)
 	Serial.print("New calibration value has been set to: ");
 	Serial.print(newCalibrationValue);
 	Serial.println(", use this as calibration value (calFactor) in your project sketch.");
-	Serial.print("Save this value to EEPROM adress ");
-	Serial.print(calVal_eepromAdress);
+	Serial.print("Save this value to EEPROM address ");
+	Serial.print(calVal_eepromAddress);
 	Serial.println("? y/n");
 
 	_resume = false;
@@ -186,13 +186,13 @@ void Calibrate(MenuItem* menu)
 			char inByte = Serial.read();
 			if (inByte == 'y') {
 				EEPROM.begin(512);
-				EEPROM.put(calVal_eepromAdress, newCalibrationValue);
+				EEPROM.put(calVal_eepromAddress, newCalibrationValue);
 				EEPROM.commit();
-				EEPROM.get(calVal_eepromAdress, newCalibrationValue);
+				EEPROM.get(calVal_eepromAddress, newCalibrationValue);
 				Serial.print("Value ");
 				Serial.print(newCalibrationValue);
 				Serial.print(" saved to EEPROM address: ");
-				Serial.println(calVal_eepromAdress);
+				Serial.println(calVal_eepromAddress);
 				_resume = true;
 
 			}
@@ -231,20 +231,20 @@ void changeSavedCalFactor() {
 	}
 	_resume = false;
 	Serial.print("Save this value to EEPROM adress ");
-	Serial.print(calVal_eepromAdress);
+	Serial.print(calVal_eepromAddress);
 	Serial.println("? y/n");
 	while (_resume == false) {
 		if (Serial.available() > 0) {
 			char inByte = Serial.read();
 			if (inByte == 'y') {
 				EEPROM.begin(512);
-				EEPROM.put(calVal_eepromAdress, newCalibrationValue);
+				EEPROM.put(calVal_eepromAddress, newCalibrationValue);
 				EEPROM.commit();
-				EEPROM.get(calVal_eepromAdress, newCalibrationValue);
+				EEPROM.get(calVal_eepromAddress, newCalibrationValue);
 				Serial.print("Value ");
 				Serial.print(newCalibrationValue);
 				Serial.print(" saved to EEPROM address: ");
-				Serial.println(calVal_eepromAdress);
+				Serial.println(calVal_eepromAddress);
 				_resume = true;
 			}
 			else if (inByte == 'n') {

@@ -31,7 +31,7 @@ int nCurrentSpool = 0;          // the currently loaded spool
 bool bAllowMenuWrap = false;
 uint16_t menuLineColor = TFT_CYAN;
 uint16_t menuLineActiveColor = TFT_WHITE;
-const int calVal_eepromAdress = 0;
+const int calVal_eepromAddress = 0;
 
 // functions
 bool HandleMenus();
