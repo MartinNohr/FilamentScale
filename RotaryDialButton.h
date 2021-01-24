@@ -1,5 +1,6 @@
 #pragma once
 #include <queue>
+
 class CRotaryDialButton {
 public:
 	enum Button { BTN_NONE, BTN_LEFT, BTN_RIGHT, BTN_CLICK, BTN_LONGPRESS };
