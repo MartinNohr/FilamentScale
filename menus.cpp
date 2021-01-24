@@ -3,7 +3,6 @@
  Created:	01/20/2021 6:12:01 PM
  Author:	Martin Nohr
 */
-#include "RotaryDialButton.h"
 #include "menus.h"
 
 // draw a progress bar

@@ -24,10 +24,10 @@
    This is an example sketch on how to use this library
 */
 #include "menus.h"
-#include <vector>
 
 #include <HX711_ADC.h>
 #include <EEPROM.h>
+void DrawProgressBar(int x, int y, int dx, int dy, int percent);
 
 //pins:
 const int HX711_dout = 21; //mcu > HX711 dout pin

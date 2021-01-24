@@ -1,4 +1,9 @@
 #pragma once
+#include <Arduino.h>
+//#include <time.h>
+//#include <esp32-hal.h>
+#include "RotaryDialButton.h"
+#include <vector>
 
 //#include <time.h>
 //#include "SPI.h"
@@ -11,7 +16,6 @@
 #define DIAL_A 12
 #define DIAL_B 13
 #define FRAMEBUTTON 22
-#include "RotaryDialButton.h"
 
 // use these to control the LCD brightness
 const int freq = 5000;

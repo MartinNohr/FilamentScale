@@ -1,5 +1,6 @@
 #pragma once
 #include <queue>
+#include <esp_timer.h>
 
 class CRotaryDialButton {
 public:
