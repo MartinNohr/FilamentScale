@@ -82,7 +82,7 @@ void setup() {
 
 void loop() {
     static boolean newDataReady = 0;
-    const int serialPrintInterval = 500; //increase value to slow down serial print activity
+    const int serialPrintInterval = 1000; //increase value to slow down serial print activity
 
     static bool didsomething = false;
     didsomething = HandleMenus();
@@ -95,8 +95,8 @@ void loop() {
     if (newDataReady) {
         if (millis() > t + serialPrintInterval) {
             float i = LoadCell.getData();
-            Serial.print("Load_cell output val: ");
-            Serial.println(i);
+            //Serial.print("Load_cell output val: ");
+            //Serial.println(i);
             newDataReady = 0;
             t = millis();
             int percent = (int)(i * tft.width() / 1500);
@@ -110,23 +110,31 @@ void loop() {
         }
     }
 
-    // receive command from serial terminal, send 't' to initiate tare operation:
+    // receive command from serial terminal
     if (Serial.available() > 0) {
-        float i;
-        char inByte = Serial.read();
-        if (inByte == 't') LoadCell.tareNoDelay();
+		String str;
+		Serial.println("reading serial");
+		//str = Serial.readStringUntil('\n');
+		Serial.println("str: " + str);
+		char inByte = Serial.read();
+		Serial.println("got char: " + String(inByte));
+		switch (inByte) {
+		case 't':
+			LoadCell.tareNoDelay();
+			break;
+		case 'r':
+			// manual calibrate
+			Calibrate();
+			break;
+		}
+		delay(1000);
+		Serial.flush();
     }
 
     // check if last tare operation is complete:
     if (LoadCell.getTareStatus() == true) {
         Serial.println("Tare complete");
     }
-	// check for manual calibrate
-	if (Serial.available() > 0) {
-		if (Serial.read() == 'r') {
-			Calibrate();
-		}
-	}
 }
 
 void Calibrate(MenuItem* menu)
