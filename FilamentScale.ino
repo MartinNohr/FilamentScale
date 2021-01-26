@@ -86,6 +86,9 @@ void loop() {
 
     static bool didsomething = false;
     didsomething = HandleMenus();
+	if (didsomething) {
+		bSettingsMode = true;
+	}
 
     // check for new data/start next conversion:
 	if (!bSettingsMode && LoadCell.update())
@@ -113,11 +116,13 @@ void loop() {
     // receive command from serial terminal
     if (Serial.available() > 0) {
 		String str;
+		Serial.setTimeout(10000);
 		Serial.println("reading serial");
-		//str = Serial.readStringUntil('\n');
+		str = Serial.readStringUntil('\n');
 		Serial.println("str: " + str);
-		char inByte = Serial.read();
-		Serial.println("got char: " + String(inByte));
+		char inByte = ' ';
+		//char inByte = Serial.read();
+		//Serial.println("got char: " + String(inByte));
 		switch (inByte) {
 		case 't':
 			LoadCell.tareNoDelay();
@@ -128,7 +133,7 @@ void loop() {
 			break;
 		}
 		delay(1000);
-		Serial.flush();
+		//Serial.flush();
     }
 
     // check if last tare operation is complete:
