@@ -78,17 +78,20 @@ typedef MenuItem MenuItem;
 
 MenuItem EepromMenu[] = {
 	{eExit,false,"Previous Menu"},
-	/*   {eBool,false,"Autoload Saved: %s",ToggleBool,&bAutoLoadSettings,0,0,0,"On","Off"},
-	   {eText,false,"Save Current Settings",SaveEepromSettings},
-	   {eText,false,"Load Saved Settings",LoadEepromSettings},
-	*/   {eExit,false,"Previous Menu"},
+	{eText,false,"Save Calibration",NULL},
+	{eText,false,"Save Spool Settings",NULL},
+	{eText,false,"Save All Settings",NULL},
+	{eExit,false,"Previous Menu"},
 	// make sure this one is last
 	{eTerminate}
 };
 MenuItem MainMenu[] = {
+	{eExit,false,"Main Screen"},
 	{eTextInt,false,"Current Spool: %2d",GetIntegerValue,&nCurrentSpool,0,99},
 	{eText,false,"Calibrate",Calibrate},
 	{eMenu,false,"Eeprom",{.menu = EepromMenu}},
+	{eReboot,false,"Reboot"},
+	{eExit,false,"Main Screen"},
 	// make sure this one is last
 	{eTerminate}
 };

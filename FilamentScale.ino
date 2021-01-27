@@ -54,6 +54,7 @@ void setup() {
         tft.setTextColor(TFT_RED);
         tft.setCursor(0, 15);
         tft.println("Load Cell Failed");
+		delay(5000);
         Serial.println("Timeout, check MCU>HX711 wiring and pin designations");
     }
     else {
@@ -78,16 +79,29 @@ void setup() {
     }
     // clear the button buffer
     CRotaryDialButton::getInstance()->clear();
+	tft.fillScreen(TFT_BLACK);
 }
 
 void loop() {
+	static bool bLastSettingsMode = true;
     static boolean newDataReady = 0;
     const int serialPrintInterval = 1000; //increase value to slow down serial print activity
 
     static bool didsomething = false;
-    didsomething = HandleMenus();
-	if (didsomething) {
-		bSettingsMode = true;
+	if (!bSettingsMode) {
+		if (bLastSettingsMode) {
+			bLastSettingsMode = false;
+			DisplayLine(6, "Click for Menu",TFT_BLUE);
+		}
+		if (CRotaryDialButton::getCount()) {
+			CRotaryDialButton::Button btn = CRotaryDialButton::dequeue();
+			if (btn == CRotaryDialButton::BTN_CLICK) {
+				bLastSettingsMode = bSettingsMode = true;
+			}
+		}
+	}
+	else {
+		didsomething = HandleMenus();
 	}
 
     // check for new data/start next conversion:
@@ -95,7 +109,7 @@ void loop() {
 		newDataReady = true;
 
     // get smoothed value from the dataset:
-    if (newDataReady) {
+	if (!bSettingsMode && newDataReady) {
         if (millis() > t + serialPrintInterval) {
             float i = LoadCell.getData();
             //Serial.print("Load_cell output val: ");
@@ -106,9 +120,9 @@ void loop() {
             percent = constrain(percent, 0, 100);
 			DrawProgressBar(0, 0, tft.width() - 1, 12, percent);
             String st;
-            st = "Filament: " + String(percent) + "%";
+			st = "Spool(" + String(nCurrentSpool) + "): " + String(percent) + "%";
             DisplayLine(1, st);
-            st = "Raw: " + String(i);
+            st = "Weight: " + String(i);
             DisplayLine(2, st);
         }
     }
@@ -144,6 +158,11 @@ void loop() {
 
 void Calibrate(MenuItem* menu)
 {
+	tft.fillScreen(TFT_BLACK);
+	DisplayLine(0, "Remove spools");
+	DisplayLine(1, "Push for next step");
+	CRotaryDialButton::waitButton(false, 60000);
+	return;
 	Serial.println("***");
 	Serial.println("Start calibration:");
 	Serial.println("Place the load cell an a level stable surface.");
@@ -344,6 +363,9 @@ bool RunMenus(int button)
 			case eExit: // go back a level
 				bExit = true;
 				break;
+			case eReboot:
+				ESP.restart();
+				break;
 			}
 		}
 		++menuix;
@@ -351,9 +373,15 @@ bool RunMenus(int button)
 	// if no match, and we are in a submenu, go back one level, or if bExit is set
 	if (bExit || (!bMenuChanged && MenuStack.size() > 1)) {
 		bMenuChanged = true;
-		menuPtr = MenuStack.top();
-		MenuStack.pop();
-		delete menuPtr;
+		if (MenuStack.size() <= 1) {
+			bSettingsMode = false;
+			tft.fillScreen(TFT_BLACK);
+		}
+		else {
+			menuPtr = MenuStack.top();
+			MenuStack.pop();
+			delete menuPtr;
+		}
 	}
 }
 
@@ -467,7 +495,6 @@ void ShowMenu(struct MenuItem* menu)
 			else
 				sprintf(line, "%s%s", (menu->op == eReboot) ? "" : "+", xtraline);
 			++y;
-			//Serial.println("menu text4: " + String(line));
 			break;
 		}
 		if (strlen(line) && y >= MenuStack.top()->offset) {
