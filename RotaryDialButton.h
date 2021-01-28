@@ -171,11 +171,12 @@ public:
         }
         return btn;
     }
-    // wait milliseconds for a button, optionally return click or none
-	static enum Button waitButton(bool bClick, int waitTime) {
+	// wait milliseconds for a button, optionally return click or none
+    // waitTime -1 means forever
+	static enum Button waitButton(bool bClick, int waitTime = -1) {
         enum Button ret = bClick ? BTN_CLICK : BTN_NONE;
         unsigned long nowTime = millis();
-        while (millis() < nowTime + waitTime) {
+		while (waitTime == -1 || millis() < nowTime + waitTime) {
             if (!btnBuf.empty()) {
                 ret = dequeue();
                 break;

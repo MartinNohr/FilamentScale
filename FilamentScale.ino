@@ -160,86 +160,57 @@ void Calibrate(MenuItem* menu)
 {
 	tft.fillScreen(TFT_BLACK);
 	DisplayLine(0, "Remove spools");
-	DisplayLine(1, "Push for next step");
-	CRotaryDialButton::waitButton(false, 60000);
-	return;
-	Serial.println("***");
-	Serial.println("Start calibration:");
-	Serial.println("Place the load cell an a level stable surface.");
-	Serial.println("Remove any load applied to the load cell.");
-	Serial.println("Send 't' from serial monitor to set the tare offset.");
+	DisplayLine(1, "Click for next step");
+	CRotaryDialButton::waitButton(false, -1);
 
 	boolean _resume = false;
 	while (_resume == false) {
 		LoadCell.update();
-		if (Serial.available() > 0) {
-			if (Serial.available() > 0) {
-				float i;
-				char inByte = Serial.read();
-				if (inByte == 't') LoadCell.tareNoDelay();
-			}
-		}
+		delay(500);
+		LoadCell.tareNoDelay();
 		if (LoadCell.getTareStatus() == true) {
-			Serial.println("Tare complete");
+			DisplayLine(3, "Tare complete");
 			_resume = true;
 		}
 	}
 
-	Serial.println("Now, place your known mass on the loadcell.");
-	Serial.println("Then send the weight of this mass (i.e. 100.0) from serial monitor.");
+	DisplayLine(0, "Load Known Weight");
+	CRotaryDialButton::waitButton(false, -1);
 
-	float known_mass = 0;
+	float known_mass = 0.0;
 	_resume = false;
 	while (_resume == false) {
 		LoadCell.update();
-		if (Serial.available() > 0) {
-			known_mass = Serial.parseFloat();
-			if (known_mass != 0) {
-				Serial.print("Known mass is: ");
-				Serial.println(known_mass);
-				_resume = true;
-			}
+		// need to read the value here
+		known_mass = 570.0;
+		if (known_mass != 0) {
+			DisplayLine(4, "mass: " + String(known_mass));
+			_resume = true;
 		}
 	}
-
+	CRotaryDialButton::waitButton(false, -1);
 	LoadCell.refreshDataSet(); //refresh the dataset to be sure that the known mass is measured correct
 	float newCalibrationValue = LoadCell.getNewCalibration(known_mass); //get the new calibration value
-
-	Serial.print("New calibration value has been set to: ");
-	Serial.print(newCalibrationValue);
-	Serial.println(", use this as calibration value (calFactor) in your project sketch.");
-	Serial.print("Save this value to EEPROM address ");
-	Serial.print(calVal_eepromAddress);
-	Serial.println("? y/n");
+	DisplayLine(4, "New Calibration: " + String(newCalibrationValue));
 
 	_resume = false;
 	while (_resume == false) {
-		if (Serial.available() > 0) {
-			char inByte = Serial.read();
-			if (inByte == 'y') {
-				EEPROM.begin(512);
-				EEPROM.put(calVal_eepromAddress, newCalibrationValue);
-				EEPROM.commit();
-				EEPROM.get(calVal_eepromAddress, newCalibrationValue);
-				Serial.print("Value ");
-				Serial.print(newCalibrationValue);
-				Serial.print(" saved to EEPROM address: ");
-				Serial.println(calVal_eepromAddress);
-				_resume = true;
-
-			}
-			else if (inByte == 'n') {
-				Serial.println("Value not saved to EEPROM");
-				_resume = true;
-			}
+		CRotaryDialButton::Button btn;
+		DisplayLine(4, "Long Press to Accept");
+		btn = CRotaryDialButton::waitButton(false, -1);
+		if (btn == CRotaryDialButton::BTN_LONGPRESS) {
+			EEPROM.begin(512);
+			EEPROM.put(calVal_eepromAddress, newCalibrationValue);
+			EEPROM.commit();
+			EEPROM.get(calVal_eepromAddress, newCalibrationValue);
+			DisplayLine(4, "Saved: " + String(calVal_calVal_eepromAdress));
 		}
+		else {
+			DisplayLine(4, "Not Saved");
+		}
+		_resume = true;
 	}
-
-	Serial.println("End calibration");
-	Serial.println("***");
-	Serial.println("To re-calibrate, send 'r' from serial monitor.");
-	Serial.println("For manual edit of the calibration value, send 'c' from serial monitor.");
-	Serial.println("***");
+	CRotaryDialButton::waitButton(false, -1);
 }
 
 void changeSavedCalFactor() {
