@@ -164,7 +164,7 @@ void Calibrate(MenuItem* menu)
 	CRotaryDialButton::waitButton(false, -1);
 
 	boolean _resume = false;
-	DisplayLine(3, "Updating");
+	DisplayLine(3, "Setting Tare");
 	LoadCell.update();
 	LoadCell.tare();
 	DisplayLine(3, "Tare complete");
@@ -177,7 +177,7 @@ void Calibrate(MenuItem* menu)
 	while (_resume == false) {
 		LoadCell.update();
 		// need to read the value here
-		known_mass = 570.0;
+		known_mass = 507.0;
 		if (known_mass != 0) {
 			DisplayLine(3, "mass: " + String(known_mass));
 			delay(500);
@@ -207,6 +207,7 @@ void Calibrate(MenuItem* menu)
 		}
 		_resume = true;
 	}
+	DisplayLine(3, "Done");
 	CRotaryDialButton::waitButton(false, -1);
 }
 
