@@ -511,7 +511,6 @@ void GetIntegerValue(MenuItem* menu)
 	// -1 means to reset to original
 	int stepSize = 1;
 	int originalValue = *(int*)menu->value;
-	//Serial.println("int: " + String(menu->text) + String(*(int*)menu->value));
 	char line[50];
 	CRotaryDialButton::Button button = BTN_NONE;
 	bool done = false;
@@ -523,7 +522,6 @@ void GetIntegerValue(MenuItem* menu)
 		(*menu->change)(menu, 1);
 	}
 	do {
-		//Serial.println("button: " + String(button));
 		switch (button) {
 		case BTN_LEFT:
 			if (stepSize != -1)
