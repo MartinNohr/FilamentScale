@@ -120,7 +120,7 @@ void loop() {
             percent = constrain(percent, 0, 100);
 			DrawProgressBar(0, 0, tft.width() - 1, 12, percent);
             String st;
-			st = "Spool(" + String(nCurrentSpool) + "): " + String(percent) + "%";
+			st = "Spool " + String(nCurrentSpool) + " @ " + String(percent) + "%";
             DisplayLine(1, st);
             st = "Weight: " + String(i);
             DisplayLine(2, st);
@@ -164,16 +164,11 @@ void Calibrate(MenuItem* menu)
 	CRotaryDialButton::waitButton(false, -1);
 
 	boolean _resume = false;
-	while (_resume == false) {
-		LoadCell.update();
-		delay(500);
-		LoadCell.tareNoDelay();
-		if (LoadCell.getTareStatus() == true) {
-			DisplayLine(3, "Tare complete");
-			_resume = true;
-		}
-	}
-
+	DisplayLine(3, "Updating");
+	LoadCell.update();
+	LoadCell.tare();
+	DisplayLine(3, "Tare complete");
+	delay(500);
 	DisplayLine(0, "Load Known Weight");
 	CRotaryDialButton::waitButton(false, -1);
 
@@ -184,14 +179,16 @@ void Calibrate(MenuItem* menu)
 		// need to read the value here
 		known_mass = 570.0;
 		if (known_mass != 0) {
-			DisplayLine(4, "mass: " + String(known_mass));
+			DisplayLine(3, "mass: " + String(known_mass));
+			delay(500);
 			_resume = true;
 		}
 	}
 	CRotaryDialButton::waitButton(false, -1);
 	LoadCell.refreshDataSet(); //refresh the dataset to be sure that the known mass is measured correct
 	float newCalibrationValue = LoadCell.getNewCalibration(known_mass); //get the new calibration value
-	DisplayLine(4, "New Calibration: " + String(newCalibrationValue));
+	DisplayLine(3, "New Calibration: " + String(newCalibrationValue));
+	delay(500);
 
 	_resume = false;
 	while (_resume == false) {
