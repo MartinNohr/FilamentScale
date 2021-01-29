@@ -81,6 +81,8 @@ void setup() {
     // clear the button buffer
     CRotaryDialButton::getInstance()->clear();
 	tft.fillScreen(TFT_BLACK);
+	FILSPOOL fspl = { 0,0 };
+	SpoolArray.push_back(fspl);
 }
 
 void loop() {
@@ -111,19 +113,18 @@ void loop() {
 
     // get smoothed value from the dataset:
 	if (!bSettingsMode && newDataReady) {
-        if (millis() > t + serialPrintInterval) {
-            float i = LoadCell.getData();
-            //Serial.print("Load_cell output val: ");
-            //Serial.println(i);
+		if (millis() > t + serialPrintInterval) {
+			float weight = LoadCell.getData();
+			int nWeight = weight - SpoolArray[nActiveSpool].spoolWeight;
             newDataReady = 0;
             t = millis();
-            int percent = (int)(i * tft.width() / 1500);
+            int percent = (int)(nWeight * tft.width() / 1000);
             percent = constrain(percent, 0, 100);
 			DrawProgressBar(0, 0, tft.width() - 1, 12, percent);
             String st;
 			st = "Spool " + String(nCurrentSpool) + " @ " + String(percent) + "%";
             DisplayLine(1, st);
-            st = "Weight: " + String(i);
+            st = "Weight: " + String(weight);
             DisplayLine(2, st);
         }
     }

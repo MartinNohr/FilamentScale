@@ -124,7 +124,6 @@ long t;
 struct FILSPOOL {
 	int spoolWeight;        // in grams
 	int remainingWeight;    // in grams
-	int spoolWidth;         // in mm
 };
 typedef FILSPOOL FilSpool;
 std::vector<FilSpool>SpoolArray;
