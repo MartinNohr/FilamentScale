@@ -33,6 +33,17 @@ uint16_t menuLineColor = TFT_CYAN;
 uint16_t menuLineActiveColor = TFT_WHITE;
 const int calVal_eepromAddress = 0;
 
+// storage for each filament spool
+struct FILSPOOL {
+	int spoolWeight;        // in grams
+	int remainingWeight;    // in grams
+};
+typedef FILSPOOL FilSpool;
+// a copy we can use in the menu
+FilSpool currentSpool;
+std::vector<FilSpool>SpoolArray;
+int nActiveSpool = 0;
+
 // functions
 bool HandleMenus();
 void ShowMenu(struct MenuItem* menu);
@@ -85,11 +96,20 @@ MenuItem EepromMenu[] = {
 	// make sure this one is last
 	{eTerminate}
 };
+MenuItem SpoolMenu[] = {
+	{eExit,false,"Previous Menu"},
+	{eTextInt,false,"Filament Weight: %d",GetIntegerValue,&currentSpool.remainingWeight,1,2000},
+	{eTextInt,false,"Spool Weight: %d",GetIntegerValue,&currentSpool.spoolWeight,1,500},
+	{eExit,false,"Previous Menu"},
+	// make sure this one is last
+	{eTerminate}
+};
 MenuItem MainMenu[] = {
 	{eExit,false,"Main Screen"},
 	{eTextInt,false,"Current Spool: %2d",GetIntegerValue,&nCurrentSpool,0,99},
-	{eText,false,"Calibrate",Calibrate},
+	{eMenu,false,"Spool Settings",{.menu = SpoolMenu}},
 	{eMenu,false,"Eeprom",{.menu = EepromMenu}},
+	{eText,false,"Calibrate",Calibrate},
 	{eReboot,false,"Reboot"},
 	{eExit,false,"Main Screen"},
 	// make sure this one is last
@@ -119,12 +139,3 @@ HX711_ADC LoadCell(HX711_dout, HX711_sck);
 // where to store the calibration value
 const int calVal_calVal_eepromAdress = 0;
 long t;
-
-// storage for each filament spool
-struct FILSPOOL {
-	int spoolWeight;        // in grams
-	int remainingWeight;    // in grams
-};
-typedef FILSPOOL FilSpool;
-std::vector<FilSpool>SpoolArray;
-int nActiveSpool = 0;
