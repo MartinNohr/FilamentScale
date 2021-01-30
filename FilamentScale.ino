@@ -132,8 +132,8 @@ void loop() {
 
 void SetMenuDisplayWeight(MenuItem* menu, int flag)
 {
+	// TODO: should probably check for eText or eTextInt here
 	if (flag == -2) {
-		SpoolWeights[SPOOL_INDEX] = 120;
 		menu->value = &SpoolWeights[SPOOL_INDEX];
 	}
 }
@@ -166,7 +166,7 @@ void CalculateSpoolWeight(MenuItem* menu)
 	delay(500);
 	LoadCell.refreshDataSet(); //refresh the dataset to be sure that the known mass is measured correct
 	float totalWeight = LoadCell.getData();
-	int32_t currentSpoolWeight = totalWeight - weight;
+	int currentSpoolWeight = totalWeight - weight;
 	DisplayLine(0, "Spool Weight: " + String(currentSpoolWeight));
 	DisplayLine(1, "Long Press to Accept/Click to Cancel");
 	if (CRotaryDialButton::waitButton(false, -1) == CRotaryDialButton::BTN_LONGPRESS) {

@@ -36,7 +36,7 @@ const int calVal_eepromAddress = 0;
 #define MAX_SPOOL_WEIGHTS 100
 // for the user we make the index 1 based, so use this macro to access
 #define SPOOL_INDEX (nActiveSpool-1)
-int32_t SpoolWeights[MAX_SPOOL_WEIGHTS];
+int SpoolWeights[MAX_SPOOL_WEIGHTS];
 int nActiveSpool = 1;	// the currently selected spool
 
 // functions
@@ -90,7 +90,7 @@ typedef MenuItem MenuItem;
 MenuItem SpoolMenu[] = {
 	{eExit,false,"Previous Menu"},
 	{eText,false,"Spool Wt from Full",CalculateSpoolWeight},
-	{eText,false,"Set Spool Wt: %d",ChangeSpoolWeight,NULL,0,0,0,NULL,NULL,SetMenuDisplayWeight},
+	{eTextInt,false,"Set Spool Wt: %d",ChangeSpoolWeight,NULL,1,2000,0,NULL,NULL,SetMenuDisplayWeight},
 	{eText,false,"Save Spool Settings",SaveSpoolWeights},
 	{eText,false,"Load Spool Settings",LoadSpoolWeights},
 	{eExit,false,"Previous Menu"},
