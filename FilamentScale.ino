@@ -179,6 +179,7 @@ void Calibrate(MenuItem* menu)
 	float known_mass = 0.0;
 	// read the value here
 	GetIntegerValue(&weightMenu);
+	tft.fillScreen(TFT_BLACK);
 	known_mass = (float)weight;
 	DisplayLine(0, "mass: " + String(known_mass));
 	// get the cell reading and add to dataset
@@ -197,13 +198,12 @@ void Calibrate(MenuItem* menu)
 		EEPROM.put(calVal_eepromAddress, newCalibrationValue);
 		EEPROM.commit();
 		EEPROM.get(calVal_eepromAddress, newCalibrationValue);
-		DisplayLine(0, "Saved: " + String(calVal_calVal_eepromAdress));
+		DisplayLine(0, "Calibration Saved: " + String(calVal_calVal_eepromAdress));
 	}
 	else {
-		DisplayLine(0, "Not Saved");
+		DisplayLine(0, "Calibration Not Saved");
 	}
 	DisplayLine(1, "Click to exit");
-	DisplayLine(0, "Finished Calibration");
 	CRotaryDialButton::waitButton(false, -1);
 }
 
