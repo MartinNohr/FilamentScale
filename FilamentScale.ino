@@ -36,32 +36,32 @@ void setup() {
     tft.setRotation(3);
     tft.setFreeFont(&Dialog_bold_16);
 
-    //calibrationValue = 696.0; // uncomment this if you want to set this value in the sketch
-    //calibrationValue = 335; // uncomment this if you want to set this value in the sketch
-	EEPROM.begin(512); // fetch this value from eeprom
-	EEPROM.get(eepromAddressCalibrationValue, calibrationValue);
 	menuPtr = new MenuInfo;
     MenuStack.push(menuPtr);
     MenuStack.top()->menu = MainMenu;
     MenuStack.top()->index = 0;
     MenuStack.top()->offset = 0;
+	// read the saved settings
+	LoadSpoolSettings();
 
     LoadCell.begin();
-    long stabilizingtime = 2000; // tare precision can be improved by adding a few seconds of stabilizing time
-    boolean _tare = false; //set this to false if you don't want tare to be performed in the next step
-    LoadCell.start(stabilizingtime, _tare);
+    // tare precision can be improved by adding a few seconds of stabilizing time, 2000 in this case
+    LoadCell.start(2000, false);	// false means don't tare the scale on startup
     if (LoadCell.getTareTimeoutFlag()) {
-        tft.setTextColor(TFT_RED);
-        tft.setCursor(0, 15);
-        tft.println("Load Cell Failed");
+		DisplayLine(0, "LoadCell Failed", TFT_RED);
 		delay(5000);
         Serial.println("Timeout, check MCU>HX711 wiring and pin designations");
     }
 	else {
         LoadCell.setCalFactor(calibrationValue); // set calibration factor (float)
-        Serial.println("Startup is complete");
-    }
-    while (!LoadCell.update());
+		LoadCell.update();
+		LoadCell.setTareOffset(tareOffset);
+		Serial.println("Startup is complete");
+		DisplayLine(0, "LoadCell Initialized", TFT_GREEN);
+		delay(500);
+	}
+    while (!LoadCell.update())
+		;
     Serial.print("Calibration value: ");
     Serial.println(LoadCell.getCalFactor());
     Serial.print("HX711 measured conversion time ms: ");
@@ -80,8 +80,6 @@ void setup() {
     // clear the button buffer
 	CRotaryDialButton::clear();
 	tft.fillScreen(TFT_BLACK);
-	LoadSpoolWeights();
-	LoadCell.setTareOffset(tareOffset);
 }
 
 void loop() {
@@ -183,7 +181,7 @@ void CalculateSpoolWeight(MenuItem* menu)
 }
 
 // save the array of weights and the current spool to the eeprom
-void SaveSpoolWeights(MenuItem* menu)
+void SaveSpoolSettings(MenuItem* menu)
 {
 	// save in eeprom
 	EEPROM.begin(512);
@@ -198,7 +196,7 @@ void SaveSpoolWeights(MenuItem* menu)
 }
 
 // save the array of weights and the current spool to the eeprom
-void LoadSpoolWeights(MenuItem* menu)
+void LoadSpoolSettings(MenuItem* menu)
 {
 	// read from eeprom
 	EEPROM.begin(512);

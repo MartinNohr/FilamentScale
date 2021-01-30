@@ -58,8 +58,8 @@ void CalculateSpoolWeight(MenuItem* menu = NULL);
 void Calibrate(MenuItem* menu = NULL);
 void DisplayLine(int line, String text, int16_t color = TFT_WHITE);
 void DisplayMenuLine(int line, int displine, String text);
-void SaveSpoolWeights(MenuItem* menu = NULL);
-void LoadSpoolWeights(MenuItem* menu = NULL);
+void SaveSpoolSettings(MenuItem* menu = NULL);
+void LoadSpoolSettings(MenuItem* menu = NULL);
 void ChangeSpoolWeight(MenuItem* menu);
 void SetMenuDisplayWeight(MenuItem* menu, int flag);
 void SetTare(MenuItem* menu);
@@ -103,8 +103,8 @@ MenuItem SpoolMenu[] = {
 	{eExit,false,"Previous Menu"},
 	{eText,false,"Spool Wt from Full",CalculateSpoolWeight},
 	{eTextInt,false,"Set Spool Wt: %d",ChangeSpoolWeight,NULL,1,2000,0,NULL,NULL,SetMenuDisplayWeight},
-	{eText,false,"Save Spool Settings",SaveSpoolWeights},
-	{eText,false,"Load Spool Settings",LoadSpoolWeights},
+	{eText,false,"Save Spool Settings",SaveSpoolSettings},
+	{eText,false,"Load Spool Settings",LoadSpoolSettings},
 	{eText,false,"Calibrate",Calibrate},
 	{eExit,false,"Previous Menu"},
 	// make sure this one is last
