@@ -33,21 +33,17 @@ uint16_t menuLineColor = TFT_CYAN;
 uint16_t menuLineActiveColor = TFT_WHITE;
 const int calVal_eepromAddress = 0;
 
-// storage for each filament spool
-struct FILSPOOL {
-	int spoolWeight;        // in grams
-	int remainingWeight;    // in grams
-};
-typedef FILSPOOL FilSpool;
-// a copy we can use in the menu
-FilSpool currentSpool;
-std::vector<FilSpool>SpoolArray;
-int nActiveSpool = 0;
+// keep a list of spool weights
+#define MAX_SPOOL_WEIGHTS 101
+// [0] always holds the current value, so we can use it in the menu system
+int32_t SpoolWeights[MAX_SPOOL_WEIGHTS];
+int nActiveSpool = 1;
 
 // functions
 bool HandleMenus();
 void ShowMenu(struct MenuItem* menu);
 void GetIntegerValue(MenuItem* menu);
+void CalculateSpoolWeight(MenuItem* menu = NULL);
 void Calibrate(MenuItem* menu = NULL);
 void DisplayLine(int line, String text, int16_t color = TFT_WHITE);
 void DisplayMenuLine(int line, int displine, String text);
@@ -87,19 +83,11 @@ struct MenuItem {
 };
 typedef MenuItem MenuItem;
 
-MenuItem EepromMenu[] = {
-	{eExit,false,"Previous Menu"},
-	{eText,false,"Save Calibration",NULL},
-	{eText,false,"Save Spool Settings",NULL},
-	{eText,false,"Save All Settings",NULL},
-	{eExit,false,"Previous Menu"},
-	// make sure this one is last
-	{eTerminate}
-};
 MenuItem SpoolMenu[] = {
 	{eExit,false,"Previous Menu"},
-	{eTextInt,false,"Filament Weight: %d",GetIntegerValue,&currentSpool.remainingWeight,1,2000},
-	{eTextInt,false,"Spool Weight: %d",GetIntegerValue,&currentSpool.spoolWeight,1,500},
+	{eText,false,"Spool Weight from Full Spool",CalculateSpoolWeight},
+	{eTextInt,false,"Enter Spool Weight: %d",GetIntegerValue,&SpoolWeights[0],1,2000},
+	{eText,false,"Save Spool Settings",NULL},
 	{eExit,false,"Previous Menu"},
 	// make sure this one is last
 	{eTerminate}
@@ -108,7 +96,6 @@ MenuItem MainMenu[] = {
 	{eExit,false,"Main Screen"},
 	{eTextInt,false,"Current Spool: %2d",GetIntegerValue,&nCurrentSpool,0,99},
 	{eMenu,false,"Spool Settings",{.menu = SpoolMenu}},
-	{eMenu,false,"Eeprom",{.menu = EepromMenu}},
 	{eText,false,"Calibrate",Calibrate},
 	{eReboot,false,"Reboot"},
 	{eExit,false,"Main Screen"},
