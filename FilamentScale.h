@@ -47,6 +47,8 @@ void CalculateSpoolWeight(MenuItem* menu = NULL);
 void Calibrate(MenuItem* menu = NULL);
 void DisplayLine(int line, String text, int16_t color = TFT_WHITE);
 void DisplayMenuLine(int line, int displine, String text);
+void SaveSpoolWeights(MenuItem* menu = NULL);
+void LoadSpoolWeights(MenuItem* menu = NULL);
 
 enum eDisplayOperation {
 	eText,              // handle text with optional %s value
@@ -87,7 +89,8 @@ MenuItem SpoolMenu[] = {
 	{eExit,false,"Previous Menu"},
 	{eText,false,"Spool Weight from Full Spool",CalculateSpoolWeight},
 	{eTextInt,false,"Enter Spool Weight: %d",GetIntegerValue,&SpoolWeights[0],1,2000},
-	{eText,false,"Save Spool Settings",NULL},
+	{eText,false,"Save Spool Settings",SaveSpoolWeights},
+	{eText,false,"Load Spool Settings",LoadSpoolWeights},
 	{eExit,false,"Previous Menu"},
 	// make sure this one is last
 	{eTerminate}

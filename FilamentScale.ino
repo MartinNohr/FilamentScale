@@ -81,8 +81,7 @@ void setup() {
     // clear the button buffer
     CRotaryDialButton::getInstance()->clear();
 	tft.fillScreen(TFT_BLACK);
-	FILSPOOL fspl = { 0,0 };
-	SpoolArray.push_back(fspl);
+	LoadSpoolWeights();
 }
 
 void loop() {
@@ -115,7 +114,8 @@ void loop() {
 	if (!bSettingsMode && newDataReady) {
 		if (millis() > t + serialPrintInterval) {
 			float weight = LoadCell.getData();
-			int nWeight = weight - SpoolArray[nActiveSpool].spoolWeight;
+			// TODO: the 1000 should be adjustable as the full value of a spool
+			int nWeight = weight - 1000;
             newDataReady = 0;
             t = millis();
             int percent = (int)(nWeight * tft.width() / 1000);
@@ -152,11 +152,44 @@ void CalculateSpoolWeight(MenuItem* menu)
 	LoadCell.refreshDataSet(); //refresh the dataset to be sure that the known mass is measured correct
 	float totalWeight = LoadCell.getData();
 	int32_t currentSpoolWeight = totalWeight - weight;
-	DisplayLine(0, "Spool Weight: " + String(currentSpoolWeight);
+	DisplayLine(0, "Spool Weight: " + String(currentSpoolWeight));
 	DisplayLine(1, "Long Press to Accept/Click to Cancel");
 	if (CRotaryDialButton::waitButton(false, -1) == CRotaryDialButton::BTN_LONGPRESS) {
 		SpoolWeights[0] = SpoolWeights[nCurrentSpool] = currentSpoolWeight;
 	}
+}
+
+// save the array of weights and the current spool to the eeprom
+void SaveSpoolWeights(MenuItem* menu)
+{
+	// make sure the [0] entry is set
+	SpoolWeights[0] = SpoolWeights[nCurrentSpool];
+	// save in eeprom
+	EEPROM.begin(512);
+	int address = calVal_eepromAddress + sizeof(float);
+	EEPROM.put(address, nActiveSpool);
+	address += sizeof(nActiveSpool);
+	// loop storing the weight array
+	for (int ix = 0; ix < MAX_SPOOL_WEIGHTS; ++ix, address += sizeof(*SpoolWeights)) {
+		EEPROM.put(address, SpoolWeights[ix]);
+	}
+	EEPROM.commit();
+}
+
+// save the array of weights and the current spool to the eeprom
+void LoadSpoolWeights(MenuItem* menu)
+{
+	// read from eeprom
+	EEPROM.begin(512);
+	int address = calVal_eepromAddress + sizeof(float);
+	EEPROM.get(address, nActiveSpool);
+	address += sizeof(nActiveSpool);
+	// loop reading the weight array
+	for (int ix = 0; ix < MAX_SPOOL_WEIGHTS; ++ix, address += sizeof(*SpoolWeights)) {
+		EEPROM.get(address, SpoolWeights[ix]);
+	}
+	// make sure the [0] entry is set
+	SpoolWeights[0] = SpoolWeights[nCurrentSpool];
 }
 
 void Calibrate(MenuItem* menu)
