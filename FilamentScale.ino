@@ -90,10 +90,15 @@ void loop() {
     const int serialPrintInterval = 1000; //increase value to slow down serial print activity
 
     static bool didsomething = false;
-	if (!bSettingsMode) {
+	if (bSettingsMode) {
+		didsomething = HandleMenus();
+		// in case it was changed
+		SpoolWeights[nCurrentSpool] = SpoolWeights[0];
+	}
+	else {
 		if (bLastSettingsMode) {
 			bLastSettingsMode = false;
-			DisplayLine(6, "Click for Menu",TFT_BLUE);
+			DisplayLine(6, "Click for Menu", TFT_BLUE);
 		}
 		if (CRotaryDialButton::getCount()) {
 			CRotaryDialButton::Button btn = CRotaryDialButton::dequeue();
@@ -101,9 +106,6 @@ void loop() {
 				bLastSettingsMode = bSettingsMode = true;
 			}
 		}
-	}
-	else {
-		didsomething = HandleMenus();
 	}
 
     // check for new data/start next conversion:
@@ -128,6 +130,22 @@ void loop() {
             DisplayLine(2, st);
         }
     }
+}
+
+void ChangeCurrentSpool(MenuItem* menu, int flag)
+{
+	if (flag == -1) {
+		// copy the new spool data into the one the menu can change
+		SpoolWeights[0] = SpoolWeights[nCurrentSpool];
+	}
+}
+
+void ChangeSpoolWeight(MenuItem* menu, int flag)
+{
+	if (flag == -1) {
+		// fix the real weight since the menu can only change the current one
+		SpoolWeights[nCurrentSpool] = SpoolWeights[0];
+	}
 }
 
 void CalculateSpoolWeight(MenuItem* menu)

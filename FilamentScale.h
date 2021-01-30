@@ -49,6 +49,8 @@ void DisplayLine(int line, String text, int16_t color = TFT_WHITE);
 void DisplayMenuLine(int line, int displine, String text);
 void SaveSpoolWeights(MenuItem* menu = NULL);
 void LoadSpoolWeights(MenuItem* menu = NULL);
+void ChangeCurrentSpool(MenuItem* menu, int flag);
+void ChangeSpoolWeight(MenuItem* menu, int flag);
 
 enum eDisplayOperation {
 	eText,              // handle text with optional %s value
@@ -87,8 +89,8 @@ typedef MenuItem MenuItem;
 
 MenuItem SpoolMenu[] = {
 	{eExit,false,"Previous Menu"},
-	{eText,false,"Spool Weight from Full Spool",CalculateSpoolWeight},
-	{eTextInt,false,"Enter Spool Weight: %d",GetIntegerValue,&SpoolWeights[0],1,2000},
+	{eText,false,"Spool Weight from Full Spool",CalculateSpoolWeight,NULL,0,0,0,NULL,NULL,ChangeSpoolWeight},
+	{eTextInt,false,"Enter Spool Weight: %d",GetIntegerValue,&SpoolWeights[0],1,2000,0,NULL,NULL,ChangeSpoolWeight},
 	{eText,false,"Save Spool Settings",SaveSpoolWeights},
 	{eText,false,"Load Spool Settings",LoadSpoolWeights},
 	{eExit,false,"Previous Menu"},
@@ -97,7 +99,7 @@ MenuItem SpoolMenu[] = {
 };
 MenuItem MainMenu[] = {
 	{eExit,false,"Main Screen"},
-	{eTextInt,false,"Current Spool: %2d",GetIntegerValue,&nCurrentSpool,0,99},
+	{eTextInt,false,"Current Spool: %2d",GetIntegerValue,&nCurrentSpool,1,MAX_SPOOL_WEIGHTS,0,NULL,NULL,ChangeCurrentSpool},
 	{eMenu,false,"Spool Settings",{.menu = SpoolMenu}},
 	{eText,false,"Calibrate",Calibrate},
 	{eReboot,false,"Reboot"},
