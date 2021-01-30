@@ -96,11 +96,11 @@ void loop() {
 	else {
 		if (bLastSettingsMode) {
 			bLastSettingsMode = false;
-			DisplayLine(6, "Click for Menu", TFT_BLUE);
+			DisplayLine(6, "Long Press for Menu", TFT_BLUE);
 		}
 		if (CRotaryDialButton::getCount()) {
 			CRotaryDialButton::Button btn = CRotaryDialButton::dequeue();
-			if (btn == CRotaryDialButton::BTN_CLICK) {
+			if (btn == CRotaryDialButton::BTN_LONGPRESS) {
 				bLastSettingsMode = bSettingsMode = true;
 			}
 		}
@@ -128,6 +128,14 @@ void loop() {
             DisplayLine(2, st);
         }
     }
+}
+
+void SetMenuDisplayWeight(MenuItem* menu, int flag)
+{
+	if (flag == -2) {
+		SpoolWeights[SPOOL_INDEX] = 120;
+		menu->value = &SpoolWeights[SPOOL_INDEX];
+	}
 }
 
 void ChangeSpoolWeight(MenuItem* menu)
@@ -381,6 +389,9 @@ void ShowMenu(struct MenuItem* menu)
 		case eText:
 		case eTextCurrentFile:
 			menu->valid = true;
+			if (menu->change != NULL) {
+				(*menu->change)(menu, -2);
+			}
 			if (menu->value) {
 				val = *(int*)menu->value;
 				if (menu->op == eText) {

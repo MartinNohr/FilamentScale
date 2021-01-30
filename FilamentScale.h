@@ -50,6 +50,7 @@ void DisplayMenuLine(int line, int displine, String text);
 void SaveSpoolWeights(MenuItem* menu = NULL);
 void LoadSpoolWeights(MenuItem* menu = NULL);
 void ChangeSpoolWeight(MenuItem* menu);
+void SetMenuDisplayWeight(MenuItem* menu, int flag);
 
 enum eDisplayOperation {
 	eText,              // handle text with optional %s value
@@ -81,7 +82,7 @@ struct MenuItem {
 	int decimals;                       // 0 for int, 1 for 0.1
 	char* on;                           // text for boolean true
 	char* off;                          // text for boolean false
-	// flag is 1 for first time, 0 for changes, and -1 for last call
+	// flag is 1 for first time, 0 for changes, and -1 for last call, and -2 for display text call
 	void(*change)(MenuItem*, int flag); // call for each change, example: brightness change show effect
 };
 typedef MenuItem MenuItem;
@@ -89,7 +90,7 @@ typedef MenuItem MenuItem;
 MenuItem SpoolMenu[] = {
 	{eExit,false,"Previous Menu"},
 	{eText,false,"Spool Wt from Full",CalculateSpoolWeight},
-	{eText,false,"Set Spool Weight: %d",ChangeSpoolWeight,NULL,1,2000},
+	{eText,false,"Set Spool Wt: %d",ChangeSpoolWeight,NULL,0,0,0,NULL,NULL,SetMenuDisplayWeight},
 	{eText,false,"Save Spool Settings",SaveSpoolWeights},
 	{eText,false,"Load Spool Settings",LoadSpoolWeights},
 	{eExit,false,"Previous Menu"},
