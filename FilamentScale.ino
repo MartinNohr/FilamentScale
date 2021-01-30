@@ -49,7 +49,7 @@ void setup() {
 
     LoadCell.begin();
     long stabilizingtime = 2000; // tare precision can be improved by adding a few seconds of stabilizing time
-    boolean _tare = false; //set this to false if you don't want tare to be performed in the next step
+    boolean _tare = true; //set this to false if you don't want tare to be performed in the next step
     LoadCell.start(stabilizingtime, _tare);
     if (LoadCell.getTareTimeoutFlag()) {
         tft.setTextColor(TFT_RED);
@@ -92,8 +92,6 @@ void loop() {
     static bool didsomething = false;
 	if (bSettingsMode) {
 		didsomething = HandleMenus();
-		// in case it was changed
-		SpoolWeights[nCurrentSpool] = SpoolWeights[0];
 	}
 	else {
 		if (bLastSettingsMode) {
@@ -124,7 +122,7 @@ void loop() {
             percent = constrain(percent, 0, 100);
 			DrawProgressBar(0, 0, tft.width() - 1, 12, percent);
             String st;
-			st = "Spool " + String(nCurrentSpool) + " @ " + String(percent) + "%";
+			st = "Spool " + String(nActiveSpool) + " @ " + String(percent) + "%";
             DisplayLine(1, st);
             st = "Weight: " + String(weight);
             DisplayLine(2, st);
@@ -132,20 +130,11 @@ void loop() {
     }
 }
 
-void ChangeCurrentSpool(MenuItem* menu, int flag)
+void ChangeSpoolWeight(MenuItem* menu)
 {
-	if (flag == -1) {
-		// copy the new spool data into the one the menu can change
-		SpoolWeights[0] = SpoolWeights[nCurrentSpool];
-	}
-}
-
-void ChangeSpoolWeight(MenuItem* menu, int flag)
-{
-	if (flag == -1) {
-		// fix the real weight since the menu can only change the current one
-		SpoolWeights[nCurrentSpool] = SpoolWeights[0];
-	}
+	// add the address and get the integer
+	menu->value = &SpoolWeights[SPOOL_INDEX];
+	GetIntegerValue(menu);
 }
 
 void CalculateSpoolWeight(MenuItem* menu)
@@ -173,15 +162,13 @@ void CalculateSpoolWeight(MenuItem* menu)
 	DisplayLine(0, "Spool Weight: " + String(currentSpoolWeight));
 	DisplayLine(1, "Long Press to Accept/Click to Cancel");
 	if (CRotaryDialButton::waitButton(false, -1) == CRotaryDialButton::BTN_LONGPRESS) {
-		SpoolWeights[0] = SpoolWeights[nCurrentSpool] = currentSpoolWeight;
+		// accepted new weight
 	}
 }
 
 // save the array of weights and the current spool to the eeprom
 void SaveSpoolWeights(MenuItem* menu)
 {
-	// make sure the [0] entry is set
-	SpoolWeights[0] = SpoolWeights[nCurrentSpool];
 	// save in eeprom
 	EEPROM.begin(512);
 	int address = calVal_eepromAddress + sizeof(float);
@@ -206,8 +193,6 @@ void LoadSpoolWeights(MenuItem* menu)
 	for (int ix = 0; ix < MAX_SPOOL_WEIGHTS; ++ix, address += sizeof(*SpoolWeights)) {
 		EEPROM.get(address, SpoolWeights[ix]);
 	}
-	// make sure the [0] entry is set
-	SpoolWeights[0] = SpoolWeights[nCurrentSpool];
 }
 
 void Calibrate(MenuItem* menu)
@@ -507,6 +492,9 @@ void ToggleBool(MenuItem* menu)
 // get integer values
 void GetIntegerValue(MenuItem* menu)
 {
+	if (menu->change != NULL) {
+		(*menu->change)(menu, 1);
+	}
 	// -1 means to reset to original
 	int stepSize = 1;
 	int originalValue = *(int*)menu->value;
@@ -517,9 +505,6 @@ void GetIntegerValue(MenuItem* menu)
 	DisplayLine(1, "Range: " + String(menu->min) + " to " + String(menu->max));
 	DisplayLine(3, "Long Press to Accept");
 	int oldVal = *(int*)menu->value;
-	if (menu->change != NULL) {
-		(*menu->change)(menu, 1);
-	}
 	do {
 		switch (button) {
 		case BTN_LEFT:

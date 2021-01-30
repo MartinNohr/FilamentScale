@@ -27,17 +27,17 @@ TFT_eSPI tft = TFT_eSPI();       // Invoke custom library
 int nDisplayBrightness = 100;           // this is in %
 
 bool bSettingsMode = false;     // set true when settings are displayed
-int nCurrentSpool = 0;          // the currently loaded spool
 bool bAllowMenuWrap = false;
 uint16_t menuLineColor = TFT_CYAN;
 uint16_t menuLineActiveColor = TFT_WHITE;
 const int calVal_eepromAddress = 0;
 
 // keep a list of spool weights
-#define MAX_SPOOL_WEIGHTS 101
-// [0] always holds the current value, so we can use it in the menu system
+#define MAX_SPOOL_WEIGHTS 100
+// for the user we make the index 1 based, so use this macro to access
+#define SPOOL_INDEX (nActiveSpool-1)
 int32_t SpoolWeights[MAX_SPOOL_WEIGHTS];
-int nActiveSpool = 1;
+int nActiveSpool = 1;	// the currently selected spool
 
 // functions
 bool HandleMenus();
@@ -49,8 +49,7 @@ void DisplayLine(int line, String text, int16_t color = TFT_WHITE);
 void DisplayMenuLine(int line, int displine, String text);
 void SaveSpoolWeights(MenuItem* menu = NULL);
 void LoadSpoolWeights(MenuItem* menu = NULL);
-void ChangeCurrentSpool(MenuItem* menu, int flag);
-void ChangeSpoolWeight(MenuItem* menu, int flag);
+void ChangeSpoolWeight(MenuItem* menu);
 
 enum eDisplayOperation {
 	eText,              // handle text with optional %s value
@@ -76,7 +75,7 @@ struct MenuItem {
 		void(*function)(MenuItem*);     // called on click
 		MenuItem* menu;                 // jump to another menu
 	};
-	const void* value;                  // associated variable
+	void* value;                  // associated variable
 	long min;                           // the minimum value, also used for ifequal
 	long max;                           // the maximum value, also size to compare for if
 	int decimals;                       // 0 for int, 1 for 0.1
@@ -89,8 +88,8 @@ typedef MenuItem MenuItem;
 
 MenuItem SpoolMenu[] = {
 	{eExit,false,"Previous Menu"},
-	{eText,false,"Spool Weight from Full Spool",CalculateSpoolWeight,NULL,0,0,0,NULL,NULL,ChangeSpoolWeight},
-	{eTextInt,false,"Enter Spool Weight: %d",GetIntegerValue,&SpoolWeights[0],1,2000,0,NULL,NULL,ChangeSpoolWeight},
+	{eText,false,"Spool Weight from Full Spool",CalculateSpoolWeight},
+	{eTextInt,false,"Enter Spool Weight: %d",ChangeSpoolWeight,NULL,1,2000},
 	{eText,false,"Save Spool Settings",SaveSpoolWeights},
 	{eText,false,"Load Spool Settings",LoadSpoolWeights},
 	{eExit,false,"Previous Menu"},
@@ -99,7 +98,7 @@ MenuItem SpoolMenu[] = {
 };
 MenuItem MainMenu[] = {
 	{eExit,false,"Main Screen"},
-	{eTextInt,false,"Current Spool: %2d",GetIntegerValue,&nCurrentSpool,1,MAX_SPOOL_WEIGHTS,0,NULL,NULL,ChangeCurrentSpool},
+	{eTextInt,false,"Current Spool: %2d",GetIntegerValue,&nActiveSpool,1,MAX_SPOOL_WEIGHTS},
 	{eMenu,false,"Spool Settings",{.menu = SpoolMenu}},
 	{eText,false,"Calibrate",Calibrate},
 	{eReboot,false,"Reboot"},
