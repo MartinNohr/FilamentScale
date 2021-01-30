@@ -88,8 +88,8 @@ typedef MenuItem MenuItem;
 
 MenuItem SpoolMenu[] = {
 	{eExit,false,"Previous Menu"},
-	{eText,false,"Spool Weight from Full Spool",CalculateSpoolWeight},
-	{eTextInt,false,"Enter Spool Weight: %d",ChangeSpoolWeight,NULL,1,2000},
+	{eText,false,"Spool Wt from Full",CalculateSpoolWeight},
+	{eText,false,"Set Spool Weight: %d",ChangeSpoolWeight,NULL,1,2000},
 	{eText,false,"Save Spool Settings",SaveSpoolWeights},
 	{eText,false,"Load Spool Settings",LoadSpoolWeights},
 	{eExit,false,"Previous Menu"},
