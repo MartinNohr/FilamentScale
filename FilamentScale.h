@@ -30,7 +30,6 @@ bool bSettingsMode = false;     // set true when settings are displayed
 bool bAllowMenuWrap = false;
 uint16_t menuLineColor = TFT_CYAN;
 uint16_t menuLineActiveColor = TFT_WHITE;
-const int calVal_eepromAddress = 0;
 
 // keep a list of spool weights
 #define MAX_SPOOL_WEIGHTS 100
@@ -38,6 +37,18 @@ const int calVal_eepromAddress = 0;
 #define SPOOL_INDEX (nActiveSpool-1)
 int SpoolWeights[MAX_SPOOL_WEIGHTS];
 int nActiveSpool = 1;	// the currently selected spool
+
+float calibrationValue; // calibration value
+long tareOffset;
+// stored in EEPROM
+// calibrationValue
+// tareOffset
+// nActiveSpool
+// SpoolWeights array
+const int eepromAddressCalibrationValue = 0;
+const int eepromAddressTareOffset = eepromAddressCalibrationValue + sizeof(calibrationValue);
+const int eepromAddressActiveSpool = eepromAddressTareOffset + sizeof(tareOffset);
+const int eepromAddressSpoolWeights = eepromAddressActiveSpool + sizeof(tareOffset);
 
 // functions
 bool HandleMenus();
@@ -51,6 +62,7 @@ void SaveSpoolWeights(MenuItem* menu = NULL);
 void LoadSpoolWeights(MenuItem* menu = NULL);
 void ChangeSpoolWeight(MenuItem* menu);
 void SetMenuDisplayWeight(MenuItem* menu, int flag);
+void SetTare(MenuItem* menu);
 
 enum eDisplayOperation {
 	eText,              // handle text with optional %s value
@@ -93,6 +105,7 @@ MenuItem SpoolMenu[] = {
 	{eTextInt,false,"Set Spool Wt: %d",ChangeSpoolWeight,NULL,1,2000,0,NULL,NULL,SetMenuDisplayWeight},
 	{eText,false,"Save Spool Settings",SaveSpoolWeights},
 	{eText,false,"Load Spool Settings",LoadSpoolWeights},
+	{eText,false,"Calibrate",Calibrate},
 	{eExit,false,"Previous Menu"},
 	// make sure this one is last
 	{eTerminate}
@@ -101,8 +114,8 @@ MenuItem MainMenu[] = {
 	{eExit,false,"Main Screen"},
 	{eTextInt,false,"Current Spool: %2d",GetIntegerValue,&nActiveSpool,1,MAX_SPOOL_WEIGHTS},
 	{eMenu,false,"Spool Settings",{.menu = SpoolMenu}},
-	{eText,false,"Calibrate",Calibrate},
-	{eReboot,false,"Reboot"},
+	{eText,false,"Set Tare Scale",SetTare},
+	{eReboot,false,"Reboot System"},
 	{eExit,false,"Main Screen"},
 	// make sure this one is last
 	{eTerminate}

@@ -23,7 +23,7 @@
 void setup() {
     Serial.begin(115200); delay(10);
     Serial.println("Starting...");
-    CRotaryDialButton::getInstance()->begin(DIAL_A, DIAL_B, DIAL_BTN);
+    CRotaryDialButton::begin(DIAL_A, DIAL_B, DIAL_BTN);
     tft.init();
     // configure LCD PWM functionalitites
     pinMode(TFT_ENABLE, OUTPUT);
@@ -36,11 +36,10 @@ void setup() {
     tft.setRotation(3);
     tft.setFreeFont(&Dialog_bold_16);
 
-    float calibrationValue; // calibration value
     //calibrationValue = 696.0; // uncomment this if you want to set this value in the sketch
     //calibrationValue = 335; // uncomment this if you want to set this value in the sketch
 	EEPROM.begin(512); // fetch this value from eeprom
-	EEPROM.get(calVal_eepromAddress, calibrationValue);
+	EEPROM.get(eepromAddressCalibrationValue, calibrationValue);
 	menuPtr = new MenuInfo;
     MenuStack.push(menuPtr);
     MenuStack.top()->menu = MainMenu;
@@ -49,7 +48,7 @@ void setup() {
 
     LoadCell.begin();
     long stabilizingtime = 2000; // tare precision can be improved by adding a few seconds of stabilizing time
-    boolean _tare = true; //set this to false if you don't want tare to be performed in the next step
+    boolean _tare = false; //set this to false if you don't want tare to be performed in the next step
     LoadCell.start(stabilizingtime, _tare);
     if (LoadCell.getTareTimeoutFlag()) {
         tft.setTextColor(TFT_RED);
@@ -58,7 +57,7 @@ void setup() {
 		delay(5000);
         Serial.println("Timeout, check MCU>HX711 wiring and pin designations");
     }
-    else {
+	else {
         LoadCell.setCalFactor(calibrationValue); // set calibration factor (float)
         Serial.println("Startup is complete");
     }
@@ -79,9 +78,10 @@ void setup() {
         Serial.println("!!Sampling rate is higher than specification, check MCU>HX711 wiring and pin designations");
     }
     // clear the button buffer
-    CRotaryDialButton::getInstance()->clear();
+	CRotaryDialButton::clear();
 	tft.fillScreen(TFT_BLACK);
 	LoadSpoolWeights();
+	LoadCell.setTareOffset(tareOffset);
 }
 
 void loop() {
@@ -128,6 +128,14 @@ void loop() {
             DisplayLine(2, st);
         }
     }
+}
+
+// zero the scale
+void SetTare(MenuItem* menu)
+{
+	LoadCell.update();
+	LoadCell.tare();
+	delay(500);
 }
 
 void SetMenuDisplayWeight(MenuItem* menu, int flag)
@@ -179,11 +187,11 @@ void SaveSpoolWeights(MenuItem* menu)
 {
 	// save in eeprom
 	EEPROM.begin(512);
-	int address = calVal_eepromAddress + sizeof(float);
-	EEPROM.put(address, nActiveSpool);
-	address += sizeof(nActiveSpool);
+	EEPROM.put(eepromAddressCalibrationValue, nActiveSpool);
+	EEPROM.put(eepromAddressTareOffset, tareOffset);
+	EEPROM.put(eepromAddressActiveSpool, nActiveSpool);
 	// loop storing the weight array
-	for (int ix = 0; ix < MAX_SPOOL_WEIGHTS; ++ix, address += sizeof(*SpoolWeights)) {
+	for (int ix = 0, address = eepromAddressSpoolWeights; ix < MAX_SPOOL_WEIGHTS; ++ix, address += sizeof(*SpoolWeights)) {
 		EEPROM.put(address, SpoolWeights[ix]);
 	}
 	EEPROM.commit();
@@ -194,11 +202,11 @@ void LoadSpoolWeights(MenuItem* menu)
 {
 	// read from eeprom
 	EEPROM.begin(512);
-	int address = calVal_eepromAddress + sizeof(float);
-	EEPROM.get(address, nActiveSpool);
-	address += sizeof(nActiveSpool);
+	EEPROM.get(eepromAddressCalibrationValue, nActiveSpool);
+	EEPROM.get(eepromAddressTareOffset, tareOffset);
+	EEPROM.get(eepromAddressActiveSpool, nActiveSpool);
 	// loop reading the weight array
-	for (int ix = 0; ix < MAX_SPOOL_WEIGHTS; ++ix, address += sizeof(*SpoolWeights)) {
+	for (int ix = 0, address = eepromAddressSpoolWeights; ix < MAX_SPOOL_WEIGHTS; ++ix, address += sizeof(*SpoolWeights)) {
 		EEPROM.get(address, SpoolWeights[ix]);
 	}
 }
@@ -240,9 +248,9 @@ void Calibrate(MenuItem* menu)
 	btn = CRotaryDialButton::waitButton(false, -1);
 	if (btn == CRotaryDialButton::BTN_LONGPRESS) {
 		EEPROM.begin(512);
-		EEPROM.put(calVal_eepromAddress, newCalibrationValue);
+		EEPROM.put(eepromAddressCalibrationValue, newCalibrationValue);
 		EEPROM.commit();
-		EEPROM.get(calVal_eepromAddress, newCalibrationValue);
+		EEPROM.get(eepromAddressCalibrationValue, newCalibrationValue);
 		DisplayLine(0, "Calibration Saved: " + String(calVal_calVal_eepromAdress));
 	}
 	else {
@@ -636,7 +644,7 @@ void SetMenuColors(MenuItem* menu)
 			DisplayLine(1, "Normal", menuLineColor);
 			change = false;
 		}
-		switch (CRotaryDialButton::getInstance()->dequeue()) {
+		switch (CRotaryDialButton::dequeue()) {
 		case CRotaryDialButton::BTN_CLICK:
 			if (mode == 0)
 				mode = 1;
@@ -738,7 +746,7 @@ enum CRotaryDialButton::Button ReadButton()
 {
 	enum CRotaryDialButton::Button retValue = BTN_NONE;
 	// read the next button, or NONE it none there
-	retValue = CRotaryDialButton::getInstance()->dequeue();
+	retValue = CRotaryDialButton::dequeue();
 	//if (retValue != BTN_NONE)
 	//	Serial.println("button:" + String(retValue));
 	return retValue;
