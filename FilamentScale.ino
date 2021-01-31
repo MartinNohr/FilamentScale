@@ -42,20 +42,16 @@ void setup() {
     MenuStack.top()->index = 0;
     MenuStack.top()->offset = 0;
 	// read the saved settings
-	Serial.println("tare offset: " + String(tareOffset));
-	Serial.println("calval: " + String(calibrationValue));
 	LoadSpoolSettings();
 	// a sanity check
 	if (calibrationValue > 5000 || calibrationValue < 10) {
 		Serial.println("bad calval: " + String(calibrationValue));
 		calibrationValue = 500.0;
 	}
-	Serial.println("tare offset: " + String(tareOffset));
-	Serial.println("calval: " + String(calibrationValue));
 
     LoadCell.begin();
     // tare precision can be improved by adding a few seconds of stabilizing time, 2000 in this case
-    LoadCell.start(2000, true);	// false means don't tare the scale on startup
+    LoadCell.start(2000, false);	// false means don't tare the scale on startup
     if (LoadCell.getTareTimeoutFlag()) {
 		DisplayLine(0, "LoadCell Failed", TFT_RED);
 		delay(5000);
@@ -63,8 +59,8 @@ void setup() {
     }
 	else {
         LoadCell.setCalFactor(calibrationValue); // set calibration factor (float)
-		//LoadCell.update();
-		//LoadCell.setTareOffset(tareOffset);
+		LoadCell.update();
+		LoadCell.setTareOffset(tareOffset);
 		Serial.println("Startup is complete");
 		DisplayLine(0, "LoadCell Initialized", TFT_GREEN);
 		delay(500);
