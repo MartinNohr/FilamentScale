@@ -2,11 +2,13 @@
 #include <HX711_ADC.h>
 #include <EEPROM.h>
 #include <TFT_eSPI.h>
-#include <vector>
+//#include <vector>
 #include <stack>
 #include <queue>
 #include "RotaryDialButton.h"
 #include "fonts.h"
+
+const char* VersionString = "Version: 01.00";
 
 // use these to control the LCD brightness
 const int freq = 5000;
@@ -103,7 +105,7 @@ MenuItem SpoolMenu[] = {
 	{eExit,false,"Previous Menu"},
 	{eTextInt,false,"Current Spool: %2d",GetIntegerValue,&nActiveSpool,1,MAX_SPOOL_WEIGHTS},
 	{eText,false,"Spool Wt from Full",CalculateSpoolWeight},
-	{eTextInt,false,"Set Spool Wt: %d",ChangeSpoolWeight,NULL,1,2000,0,NULL,NULL,SetMenuDisplayWeight},
+	{eTextInt,false,"Spool Weight: %d",ChangeSpoolWeight,NULL,1,2000,0,NULL,NULL,SetMenuDisplayWeight},
 	{eText,false,"Save Spool Settings",SaveSpoolSettings},
 	{eText,false,"Load Spool Settings",LoadSpoolSettings},
 	{eText,false,"Calibrate Weight",Calibrate},

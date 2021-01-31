@@ -119,16 +119,23 @@ void loop() {
 			float weight = LoadCell.getData();
             newDataReady = 0;
             t = millis();
+			int filamentWeight = (int)((weight - SpoolWeights[SPOOL_INDEX]) + 0.5);
+			filamentWeight = constrain(filamentWeight, 0, filamentWeight);
 			// TODO: the 1000 should be adjustable as the full value of a spool
-			int percent = (int)((weight - SpoolWeights[SPOOL_INDEX]) * 100 / 1000);
+			int percent = (filamentWeight * 100 / 1000);
             percent = constrain(percent, 0, 100);
 			DrawProgressBar(0, 0, tft.width() - 1, 12, percent);
             String st;
 			st = "Spool " + String(nActiveSpool) + " @ " + String(percent) + "%";
             DisplayLine(1, st);
-            st = "Weight: " + String(weight);
-            DisplayLine(2, st);
-        }
+			st = "Weight: " + String(filamentWeight) + " gm";
+			DisplayLine(2, st);
+			// TODO: conversion from gm to mm should be settable
+			float length = filamentWeight * 333.12 / 1000;
+			length = constrain(length, 0, length);
+			st = "Length: " + String(length) + " m";
+			DisplayLine(3, st);
+		}
     }
 }
 
