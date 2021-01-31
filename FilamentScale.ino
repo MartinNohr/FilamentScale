@@ -42,11 +42,20 @@ void setup() {
     MenuStack.top()->index = 0;
     MenuStack.top()->offset = 0;
 	// read the saved settings
+	Serial.println("tare offset: " + String(tareOffset));
+	Serial.println("calval: " + String(calibrationValue));
 	LoadSpoolSettings();
+	// a sanity check
+	if (calibrationValue > 5000 || calibrationValue < 10) {
+		Serial.println("bad calval: " + String(calibrationValue));
+		calibrationValue = 500.0;
+	}
+	Serial.println("tare offset: " + String(tareOffset));
+	Serial.println("calval: " + String(calibrationValue));
 
     LoadCell.begin();
     // tare precision can be improved by adding a few seconds of stabilizing time, 2000 in this case
-    LoadCell.start(2000, false);	// false means don't tare the scale on startup
+    LoadCell.start(2000, true);	// false means don't tare the scale on startup
     if (LoadCell.getTareTimeoutFlag()) {
 		DisplayLine(0, "LoadCell Failed", TFT_RED);
 		delay(5000);
@@ -54,8 +63,8 @@ void setup() {
     }
 	else {
         LoadCell.setCalFactor(calibrationValue); // set calibration factor (float)
-		LoadCell.update();
-		LoadCell.setTareOffset(tareOffset);
+		//LoadCell.update();
+		//LoadCell.setTareOffset(tareOffset);
 		Serial.println("Startup is complete");
 		DisplayLine(0, "LoadCell Initialized", TFT_GREEN);
 		delay(500);
@@ -77,7 +86,7 @@ void setup() {
     else if (LoadCell.getSPS() > 100) {
         Serial.println("!!Sampling rate is higher than specification, check MCU>HX711 wiring and pin designations");
     }
-    // clear the button buffer
+	// clear the button buffer
 	CRotaryDialButton::clear();
 	tft.fillScreen(TFT_BLACK);
 }
@@ -112,11 +121,10 @@ void loop() {
 	if (!bSettingsMode && newDataReady) {
 		if (millis() > t + serialPrintInterval) {
 			float weight = LoadCell.getData();
-			// TODO: the 1000 should be adjustable as the full value of a spool
-			int nWeight = weight - 1000;
             newDataReady = 0;
             t = millis();
-            int percent = (int)(nWeight * tft.width() / 1000);
+			// TODO: the 1000 should be adjustable as the full value of a spool
+			int percent = (int)((weight - SpoolWeights[SPOOL_INDEX]) * 100 / 1000);
             percent = constrain(percent, 0, 100);
 			DrawProgressBar(0, 0, tft.width() - 1, 12, percent);
             String st;
@@ -185,7 +193,7 @@ void SaveSpoolSettings(MenuItem* menu)
 {
 	// save in eeprom
 	EEPROM.begin(512);
-	EEPROM.put(eepromAddressCalibrationValue, nActiveSpool);
+	EEPROM.put(eepromAddressCalibrationValue, calibrationValue);
 	EEPROM.put(eepromAddressTareOffset, tareOffset);
 	EEPROM.put(eepromAddressActiveSpool, nActiveSpool);
 	// loop storing the weight array
@@ -200,7 +208,7 @@ void LoadSpoolSettings(MenuItem* menu)
 {
 	// read from eeprom
 	EEPROM.begin(512);
-	EEPROM.get(eepromAddressCalibrationValue, nActiveSpool);
+	EEPROM.get(eepromAddressCalibrationValue, calibrationValue);
 	EEPROM.get(eepromAddressTareOffset, tareOffset);
 	EEPROM.get(eepromAddressActiveSpool, nActiveSpool);
 	// loop reading the weight array
@@ -238,6 +246,7 @@ void Calibrate(MenuItem* menu)
 	delay(500);
 	LoadCell.refreshDataSet(); //refresh the dataset to be sure that the known mass is measured correct
 	float newCalibrationValue = LoadCell.getNewCalibration(known_mass); //get the new calibration value
+	Serial.println("newcal: " + String(newCalibrationValue));
 	DisplayLine(0, "New Calibration: " + String(newCalibrationValue));
 	delay(500);
 
@@ -249,7 +258,7 @@ void Calibrate(MenuItem* menu)
 		EEPROM.put(eepromAddressCalibrationValue, newCalibrationValue);
 		EEPROM.commit();
 		EEPROM.get(eepromAddressCalibrationValue, newCalibrationValue);
-		DisplayLine(0, "Calibration Saved: " + String(calVal_calVal_eepromAdress));
+		DisplayLine(0, "Calibration Saved: " + String(newCalibrationValue));
 	}
 	else {
 		DisplayLine(0, "Calibration Not Saved");
