@@ -42,8 +42,12 @@ void setup() {
     MenuStack.top()->index = 0;
     MenuStack.top()->offset = 0;
 	// read the saved settings after checking the version
+	Serial.println("tare: " + String(tareOffset));
+	Serial.println("cal: " + String(calibrationValue));
 	SavedSettings(false, true);
 	SavedSettings(false);
+	Serial.println("tare: " + String(tareOffset));
+	Serial.println("cal: " + String(calibrationValue));
 	// a sanity check
 	if (calibrationValue > 5000 || calibrationValue < 10) {
 		Serial.println("bad calval: " + String(calibrationValue));
@@ -212,10 +216,14 @@ bool SavedSettings(bool save, bool bOnlySignature)
 	int blockpointer = 0;
 	for (int ix = 0; ix < (sizeof(saveValueList) / sizeof(*saveValueList)); blockpointer += saveValueList[ix++].size) {
 		if (save) {
-			EEPROM.writeBytes(blockpointer, saveValueList[ix].val, saveValueList[ix].size);
+			Serial.println("tare: " + String(tareOffset));
+			Serial.println("cal: " + String(calibrationValue));
+			size_t written;
+			written = EEPROM.writeBytes(blockpointer, saveValueList[ix].val, saveValueList[ix].size);
 			if (ix == 0 && bOnlySignature) {
 				break;
 			}
+			Serial.println("block: " + String(blockpointer) + " written: " + String(written));
 		}
 		else {  // load
 			if (ix == 0) {
@@ -225,6 +233,7 @@ bool SavedSettings(bool save, bool bOnlySignature)
 				size_t bytesread = EEPROM.readBytes(0, svalue, sizeof(VersionString));
 				if (strcmp(svalue, VersionString)) {
 					DisplayLine(0, "fixing bad eeprom version...", TFT_RED);
+					delay(1000);
 					return SavedSettings(true);
 				}
 				if (bOnlySignature) {
@@ -238,6 +247,9 @@ bool SavedSettings(bool save, bool bOnlySignature)
 	}
 	if (save) {
 		retvalue = EEPROM.commit();
+		Serial.println("commit: " + String(retvalue));
+		Serial.println("tare: " + String(tareOffset));
+		Serial.println("cal: " + String(calibrationValue));
 	}
 	else {
 	}
@@ -271,6 +283,7 @@ void Calibrate(MenuItem* menu)
 	LoadCell.update();
 	LoadCell.tare();
 	DisplayLine(0, "Tare Complete");
+	tareOffset = LoadCell.getTareOffset();
 	delay(500);
 	DisplayLine(0, "Load Known Weight");
 	ClickContinue();
@@ -285,16 +298,16 @@ void Calibrate(MenuItem* menu)
 	LoadCell.update();
 	delay(500);
 	LoadCell.refreshDataSet(); //refresh the dataset to be sure that the known mass is measured correct
-	float newCalibrationValue = LoadCell.getNewCalibration(known_mass); //get the new calibration value
-	Serial.println("newcal: " + String(newCalibrationValue));
-	DisplayLine(0, "New Calibration: " + String(newCalibrationValue));
+	calibrationValue = LoadCell.getNewCalibration(known_mass); //get the new calibration value
+	Serial.println("newcal: " + String(calibrationValue));
+	DisplayLine(0, "New Calibration: " + String(calibrationValue));
 	delay(500);
 
 	CRotaryDialButton::Button btn;
 	btn = ClickContinue("Long Press to Save");
 	if (btn == CRotaryDialButton::BTN_LONGPRESS) {
 		SavedSettings(true);
-		DisplayLine(0, "Calibration Saved: " + String(newCalibrationValue));
+		DisplayLine(0, "Calibration Saved: " + String(calibrationValue));
 	}
 	else {
 		DisplayLine(0, "Calibration Not Saved");
