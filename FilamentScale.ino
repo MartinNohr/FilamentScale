@@ -41,8 +41,9 @@ void setup() {
     MenuStack.top()->menu = MainMenu;
     MenuStack.top()->index = 0;
     MenuStack.top()->offset = 0;
-	// read the saved settings
-	LoadSpoolSettings();
+	// read the saved settings after checking the version
+	SavedSettings(false, true);
+	SavedSettings(false);
 	// a sanity check
 	if (calibrationValue > 5000 || calibrationValue < 10) {
 		Serial.println("bad calval: " + String(calibrationValue));
@@ -203,33 +204,57 @@ void CalculateSpoolWeight(MenuItem* menu)
 	}
 }
 
+// read or store values in EEPROM
+bool SavedSettings(bool save, bool bOnlySignature)
+{
+	EEPROM.begin(1024);
+	bool retvalue = true;
+	int blockpointer = 0;
+	for (int ix = 0; ix < (sizeof(saveValueList) / sizeof(*saveValueList)); blockpointer += saveValueList[ix++].size) {
+		if (save) {
+			EEPROM.writeBytes(blockpointer, saveValueList[ix].val, saveValueList[ix].size);
+			if (ix == 0 && bOnlySignature) {
+				break;
+			}
+		}
+		else {  // load
+			if (ix == 0) {
+				// check signature
+				char svalue[sizeof(VersionString)];
+				memset(svalue, 0, sizeof(svalue));
+				size_t bytesread = EEPROM.readBytes(0, svalue, sizeof(VersionString));
+				if (strcmp(svalue, VersionString)) {
+					DisplayLine(0, "fixing bad eeprom version...", TFT_RED);
+					return SavedSettings(true);
+				}
+				if (bOnlySignature) {
+					return true;
+				}
+			}
+			else {
+				EEPROM.readBytes(blockpointer, saveValueList[ix].val, saveValueList[ix].size);
+			}
+		}
+	}
+	if (save) {
+		retvalue = EEPROM.commit();
+	}
+	else {
+	}
+	DisplayLine(0, String(save ? "Settings Saved" : "Settings Loaded"));
+	return retvalue;
+}
+
 // save the array of weights and the current spool to the eeprom
 void SaveSpoolSettings(MenuItem* menu)
 {
-	// save in eeprom
-	EEPROM.begin(512);
-	EEPROM.put(eepromAddressCalibrationValue, calibrationValue);
-	EEPROM.put(eepromAddressTareOffset, tareOffset);
-	EEPROM.put(eepromAddressActiveSpool, nActiveSpool);
-	// loop storing the weight array
-	for (int ix = 0, address = eepromAddressSpoolWeights; ix < MAX_SPOOL_WEIGHTS; ++ix, address += sizeof(*SpoolWeights)) {
-		EEPROM.put(address, SpoolWeights[ix]);
-	}
-	EEPROM.commit();
+	SavedSettings(true);
 }
 
 // save the array of weights and the current spool to the eeprom
 void LoadSpoolSettings(MenuItem* menu)
 {
-	// read from eeprom
-	EEPROM.begin(512);
-	EEPROM.get(eepromAddressCalibrationValue, calibrationValue);
-	EEPROM.get(eepromAddressTareOffset, tareOffset);
-	EEPROM.get(eepromAddressActiveSpool, nActiveSpool);
-	// loop reading the weight array
-	for (int ix = 0, address = eepromAddressSpoolWeights; ix < MAX_SPOOL_WEIGHTS; ++ix, address += sizeof(*SpoolWeights)) {
-		EEPROM.get(address, SpoolWeights[ix]);
-	}
+	SavedSettings(false);
 }
 
 // calibrate the scale using a known weight
@@ -268,10 +293,7 @@ void Calibrate(MenuItem* menu)
 	CRotaryDialButton::Button btn;
 	btn = ClickContinue("Long Press to Save");
 	if (btn == CRotaryDialButton::BTN_LONGPRESS) {
-		EEPROM.begin(512);
-		EEPROM.put(eepromAddressCalibrationValue, newCalibrationValue);
-		EEPROM.commit();
-		EEPROM.get(eepromAddressCalibrationValue, newCalibrationValue);
+		SavedSettings(true);
 		DisplayLine(0, "Calibration Saved: " + String(newCalibrationValue));
 	}
 	else {

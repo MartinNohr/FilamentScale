@@ -8,7 +8,7 @@
 #include "RotaryDialButton.h"
 #include "fonts.h"
 
-const char* VersionString = "Version: 01.00";
+char VersionString[] = "01.00";
 
 // use these to control the LCD brightness
 const int freq = 5000;
@@ -39,19 +39,26 @@ uint16_t menuLineActiveColor = TFT_WHITE;
 #define SPOOL_INDEX (nActiveSpool-1)
 int SpoolWeights[MAX_SPOOL_WEIGHTS];
 int nActiveSpool = 1;	// the currently selected spool
-
 float calibrationValue; // calibration value
 long tareOffset;
 float lengthConversion = 333.12;
-// stored in EEPROM
-// calibrationValue
-// tareOffset
-// nActiveSpool
-// SpoolWeights array
-const int eepromAddressCalibrationValue = 0;
-const int eepromAddressTareOffset = eepromAddressCalibrationValue + sizeof(calibrationValue);
-const int eepromAddressActiveSpool = eepromAddressTareOffset + sizeof(tareOffset);
-const int eepromAddressSpoolWeights = eepromAddressActiveSpool + sizeof(tareOffset);
+int fullSpoolFilament = 1000;		// grams on a full spool
+
+struct saveValues {
+    void* val;
+    int size;
+};
+// these values are saved in eeprom, the version is first
+const saveValues saveValueList[] = {
+    {VersionString,sizeof(VersionString)},                      // first
+	{&calibrationValue, sizeof(calibrationValue)},
+	{&tareOffset, sizeof(tareOffset)},
+	{&lengthConversion, sizeof(lengthConversion)},
+	{&fullSpoolFilament, sizeof(fullSpoolFilament)},
+	{&nActiveSpool, sizeof(nActiveSpool)},
+	{SpoolWeights, sizeof(SpoolWeights)},
+};
+
 
 // functions
 bool HandleMenus();
@@ -66,6 +73,7 @@ void LoadSpoolSettings(MenuItem* menu = NULL);
 void ChangeSpoolWeight(MenuItem* menu);
 void SetMenuDisplayWeight(MenuItem* menu, int flag);
 void SetTare(MenuItem* menu);
+bool SavedSettings(bool save, bool bOnlySignature = false);
 
 enum eDisplayOperation {
 	eText,              // handle text with optional %s value
