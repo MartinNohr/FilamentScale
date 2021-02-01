@@ -41,7 +41,8 @@ int SpoolWeights[MAX_SPOOL_WEIGHTS];
 int nActiveSpool = 1;	// the currently selected spool
 float calibrationValue; // calibration value
 long tareOffset;
-float lengthConversion = 333.12;
+long nLengthConversion = 33312;		// implied 2 decimals
+#define LENGTH_CONVERSION ((float)(nLengthConversion) / 100)
 int fullSpoolFilament = 1000;		// grams on a full spool
 
 struct saveValues {
@@ -53,7 +54,7 @@ const saveValues saveValueList[] = {
     {VersionString,sizeof(VersionString)},                      // first
 	{&calibrationValue, sizeof(calibrationValue)},
 	{&tareOffset, sizeof(tareOffset)},
-	{&lengthConversion, sizeof(lengthConversion)},
+	{&nLengthConversion, sizeof(nLengthConversion)},
 	{&fullSpoolFilament, sizeof(fullSpoolFilament)},
 	{&nActiveSpool, sizeof(nActiveSpool)},
 	{SpoolWeights, sizeof(SpoolWeights)},
@@ -118,6 +119,8 @@ MenuItem SpoolMenu[] = {
 	{eText,false,"Save Spool Settings",SaveSpoolSettings},
 	{eText,false,"Load Spool Settings",LoadSpoolSettings},
 	{eText,false,"Calibrate Weight",Calibrate},
+	{eTextInt,false,"Full Spool Wt: %d g",GetIntegerValue,&fullSpoolFilament,100,2000},
+	{eTextInt,false,"Length From Wt: %d.%d",GetIntegerValue,&nLengthConversion,30000,35000,2},
 	{eExit,false,"Previous Menu"},
 	// make sure this one is last
 	{eTerminate}

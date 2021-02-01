@@ -132,7 +132,7 @@ void loop() {
 			st = "Weight: " + String(filamentWeight) + " g";
 			DisplayLine(2, st);
 			// TODO: conversion from gram to m should be settable
-			float length = filamentWeight * lengthConversion / 1000;
+			float length = filamentWeight * LENGTH_CONVERSION / 1000.0;
 			length = constrain(length, 0, length);
 			st = "Length: " + String(length) + " m";
 			DisplayLine(3, st);
