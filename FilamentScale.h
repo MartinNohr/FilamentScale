@@ -42,6 +42,7 @@ int nActiveSpool = 1;	// the currently selected spool
 
 float calibrationValue; // calibration value
 long tareOffset;
+float lengthConversion = 333.12;
 // stored in EEPROM
 // calibrationValue
 // tareOffset
@@ -105,7 +106,7 @@ MenuItem SpoolMenu[] = {
 	{eExit,false,"Previous Menu"},
 	{eTextInt,false,"Current Spool: %2d",GetIntegerValue,&nActiveSpool,1,MAX_SPOOL_WEIGHTS},
 	{eText,false,"Spool Wt from Full",CalculateSpoolWeight},
-	{eTextInt,false,"Spool Weight: %d",ChangeSpoolWeight,NULL,1,2000,0,NULL,NULL,SetMenuDisplayWeight},
+	{eTextInt,false,"Spool Weight: %d g",ChangeSpoolWeight,NULL,1,2000,0,NULL,NULL,SetMenuDisplayWeight},
 	{eText,false,"Save Spool Settings",SaveSpoolSettings},
 	{eText,false,"Load Spool Settings",LoadSpoolSettings},
 	{eText,false,"Calibrate Weight",Calibrate},
@@ -115,9 +116,8 @@ MenuItem SpoolMenu[] = {
 };
 MenuItem MainMenu[] = {
 	{eExit,false,"Main Screen"},
-	{eTextInt,false,"Current Spool: %2d",GetIntegerValue,&nActiveSpool,1,MAX_SPOOL_WEIGHTS},
 	{eMenu,false,"Spool Settings",{.menu = SpoolMenu}},
-	{eText,false,"Tare",SetTare},
+	{eText,false,"Tare (reset zero)",SetTare},
 	{eReboot,false,"Reboot System"},
 	{eExit,false,"Main Screen"},
 	// make sure this one is last

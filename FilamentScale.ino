@@ -128,10 +128,10 @@ void loop() {
             String st;
 			st = "Spool " + String(nActiveSpool) + " @ " + String(percent) + "%";
             DisplayLine(1, st);
-			st = "Weight: " + String(filamentWeight) + " gm";
+			st = "Weight: " + String(filamentWeight) + " g";
 			DisplayLine(2, st);
-			// TODO: conversion from gm to mm should be settable
-			float length = filamentWeight * 333.12 / 1000;
+			// TODO: conversion from gram to m should be settable
+			float length = filamentWeight * lengthConversion / 1000;
 			length = constrain(length, 0, length);
 			st = "Length: " + String(length) + " m";
 			DisplayLine(3, st);
@@ -139,12 +139,25 @@ void loop() {
     }
 }
 
+CRotaryDialButton::Button ClickContinue(char* text=NULL)
+{
+	DisplayLine(6, text == NULL ? "Click to Continue" : text, TFT_BLUE);
+	return CRotaryDialButton::waitButton(false, -1);
+}
+
 // zero the scale
 void SetTare(MenuItem* menu)
 {
+	tft.fillScreen(TFT_BLACK);
+	DisplayLine(0, "Remove Spool");
+	DisplayLine(1, "Replace Nut");
+	ClickContinue();
+	tft.fillScreen(TFT_BLACK);
+	DisplayLine(0, "Setting Scale to Zero");
 	LoadCell.update();
 	LoadCell.tare();
-	delay(500);
+	DisplayLine(0, "Scale has been zeroed");
+	ClickContinue();
 }
 
 void SetMenuDisplayWeight(MenuItem* menu, int flag)
@@ -175,8 +188,7 @@ void CalculateSpoolWeight(MenuItem* menu)
 	int weight = 1200;
 	MenuItem weightMenu = { eTextInt, false, "Enter Total Grams: %d", GetIntegerValue, &weight, 1, 2000 };
 	DisplayLine(0, "Load New Spool");
-	DisplayLine(1, "Click to Continue");
-	CRotaryDialButton::waitButton(false, -1);
+	ClickContinue();
 	GetIntegerValue(&weightMenu);
 	tft.fillScreen(TFT_BLACK);
 	LoadCell.update();
@@ -220,14 +232,14 @@ void LoadSpoolSettings(MenuItem* menu)
 	}
 }
 
+// calibrate the scale using a known weight
 void Calibrate(MenuItem* menu)
 {
 	int weight = 1000;
 	MenuItem weightMenu = { eTextInt, false, "Enter Grams: %d", GetIntegerValue, &weight, 1, 2000 };
 	tft.fillScreen(TFT_BLACK);
 	DisplayLine(0, "Remove spools");
-	DisplayLine(1, "Click to Continue");
-	CRotaryDialButton::waitButton(false, -1);
+	ClickContinue();
 
 	boolean _resume = false;
 	DisplayLine(0, "Setting Tare");
@@ -236,7 +248,7 @@ void Calibrate(MenuItem* menu)
 	DisplayLine(0, "Tare Complete");
 	delay(500);
 	DisplayLine(0, "Load Known Weight");
-	CRotaryDialButton::waitButton(false, -1);
+	ClickContinue();
 
 	float known_mass = 0.0;
 	// read the value here
@@ -254,8 +266,7 @@ void Calibrate(MenuItem* menu)
 	delay(500);
 
 	CRotaryDialButton::Button btn;
-	DisplayLine(1, "Long Press to Accept - Click to Cancel");
-	btn = CRotaryDialButton::waitButton(false, -1);
+	btn = ClickContinue("Long Press to Save");
 	if (btn == CRotaryDialButton::BTN_LONGPRESS) {
 		EEPROM.begin(512);
 		EEPROM.put(eepromAddressCalibrationValue, newCalibrationValue);
@@ -266,8 +277,7 @@ void Calibrate(MenuItem* menu)
 	else {
 		DisplayLine(0, "Calibration Not Saved");
 	}
-	DisplayLine(1, "Click to exit");
-	CRotaryDialButton::waitButton(false, -1);
+	ClickContinue();
 }
 
 // draw a progress bar
@@ -416,12 +426,7 @@ void ShowMenu(struct MenuItem* menu)
 					sprintf(line, menu->text, (char*)(menu->value));
 				}
 				else if (menu->op == eTextInt) {
-					if (menu->decimals == 0) {
-						sprintf(line, menu->text, val);
-					}
-					else {
-						sprintf(line, menu->text, val / 10, val % 10);
-					}
+					sprintf(line, menu->text, (int)(val / pow10(menu->decimals)), val % (int)(pow10(menu->decimals)));
 				}
 				//Serial.println("menu text1: " + String(line));
 			}
