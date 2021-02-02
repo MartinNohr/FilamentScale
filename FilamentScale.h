@@ -164,6 +164,3 @@ const int HX711_sck = 22; //mcu > HX711 sck pin
 
 // HX711 constructor:
 HX711_ADC LoadCell(HX711_dout, HX711_sck);
-// where to store the calibration value
-const int calVal_calVal_eepromAdress = 0;
-long t;
