@@ -543,7 +543,11 @@ void GetIntegerValue(MenuItem* menu)
 	CRotaryDialButton::Button button = BTN_NONE;
 	bool done = false;
 	tft.fillScreen(TFT_BLACK);
-	DisplayLine(1, "Range: " + String(menu->min) + " to " + String(menu->max));
+	const char* fmt = menu->decimals ? "%ld.%ld" : "%ld";
+	char minstr[20], maxstr[20];
+	sprintf(minstr, fmt, menu->min / (int)pow10(menu->decimals), menu->min % (int)pow10(menu->decimals));
+	sprintf(maxstr, fmt, menu->max / (int)pow10(menu->decimals), menu->max % (int)pow10(menu->decimals));
+	DisplayLine(1, String("Range: ") + String(minstr) + " to " + String(maxstr));
 	DisplayLine(3, "Long Press to Accept");
 	int oldVal = *(int*)menu->value;
 	do {
