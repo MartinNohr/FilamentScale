@@ -117,9 +117,9 @@ MenuItem SpoolMenu[] = {
 	{eText,false,"Spool Wt from Full",CalculateSpoolWeight},
 	{eTextInt,false,"Weigh Empty Spool",WeighEmptySpool},
 	{eTextInt,false,"Empty Spool Wt: %d g",ChangeSpoolWeight,NULL,1,2000,0,NULL,NULL,SetMenuDisplayWeight},
+	{eTextInt,false,"Full Spool Wt: %d g",GetIntegerValue,&fullSpoolFilament,100,2000},
 	{eText,false,"Save Settings",SaveSpoolSettings},
 	//{eText,false,"Load Spool Settings",LoadSpoolSettings},
-	{eTextInt,false,"Full Spool Wt: %d g",GetIntegerValue,&fullSpoolFilament,100,2000},
 	{eExit,false,"Previous Menu"},
 	// make sure this one is last
 	{eTerminate}
