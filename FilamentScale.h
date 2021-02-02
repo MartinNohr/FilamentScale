@@ -72,6 +72,7 @@ void DisplayMenuLine(int line, int displine, String text);
 void SaveSpoolSettings(MenuItem* menu = NULL);
 void LoadSpoolSettings(MenuItem* menu = NULL);
 void ChangeSpoolWeight(MenuItem* menu);
+void WeighEmptySpool(MenuItem* menu);
 void SetMenuDisplayWeight(MenuItem* menu, int flag);
 void SetTare(MenuItem* menu);
 bool SavedSettings(bool save, bool bOnlySignature = false);
@@ -112,11 +113,12 @@ typedef MenuItem MenuItem;
 
 MenuItem SpoolMenu[] = {
 	{eExit,false,"Previous Menu"},
-	{eTextInt,false,"Current Spool: %2d",GetIntegerValue,&nActiveSpool,1,MAX_SPOOL_WEIGHTS},
+	{eTextInt,false,"Active Spool: %2d",GetIntegerValue,&nActiveSpool,1,MAX_SPOOL_WEIGHTS},
 	{eText,false,"Spool Wt from Full",CalculateSpoolWeight},
-	{eTextInt,false,"Spool Weight: %d g",ChangeSpoolWeight,NULL,1,2000,0,NULL,NULL,SetMenuDisplayWeight},
-	{eText,false,"Save Spool Settings",SaveSpoolSettings},
-	{eText,false,"Load Spool Settings",LoadSpoolSettings},
+	{eTextInt,false,"Weigh Empty Spool",WeighEmptySpool},
+	{eTextInt,false,"Empty Spool Wt: %d g",ChangeSpoolWeight,NULL,1,2000,0,NULL,NULL,SetMenuDisplayWeight},
+	{eText,false,"Save Settings",SaveSpoolSettings},
+	//{eText,false,"Load Spool Settings",LoadSpoolSettings},
 	{eTextInt,false,"Full Spool Wt: %d g",GetIntegerValue,&fullSpoolFilament,100,2000},
 	{eExit,false,"Previous Menu"},
 	// make sure this one is last
@@ -127,6 +129,7 @@ MenuItem ScaleMenu[] = {
 	{eText,false,"Tare (reset zero)",SetTare},
 	{eText,false,"Calibrate Weight",Calibrate},
 	{eTextInt,false,"Wt to Length: %d.%d",GetIntegerValue,&nLengthConversion,30000,40000,2},
+	{eText,false,"Save Settings",SaveSpoolSettings},
 	{eExit,false,"Previous Menu"},
 	// make sure this one is last
 	{eTerminate}

@@ -177,6 +177,30 @@ void ChangeSpoolWeight(MenuItem* menu)
 	GetIntegerValue(menu);
 }
 
+// weight an actual empty spool
+void WeighEmptySpool(MenuItem* menu)
+{
+	tft.fillScreen(TFT_BLACK);
+	DisplayLine(0, "Remove spool");
+	ClickContinue();
+	DisplayLine(0, "Setting Tare...");
+	LoadCell.update();
+	LoadCell.tare();
+	DisplayLine(0, "Tare Complete");
+	tareOffset = LoadCell.getTareOffset();
+	delay(500);
+	DisplayLine(0, "Load Empty Spool");
+	ClickContinue();
+	DisplayLine(0, "Weighing...");
+	LoadCell.update();
+	delay(500);
+	LoadCell.refreshDataSet(); //refresh the dataset to be sure that the known mass is measured correct
+	float emptyWeight = LoadCell.getData();
+	SpoolWeights[SPOOL_INDEX] = emptyWeight;
+	DisplayLine(0, "Spool Weight: " + String(SpoolWeights[SPOOL_INDEX]));
+	ClickContinue();
+}
+
 void CalculateSpoolWeight(MenuItem* menu)
 {
 	// calculate the spool weight by using a full spool and entering the known filament weight
@@ -197,12 +221,9 @@ void CalculateSpoolWeight(MenuItem* menu)
 	delay(500);
 	LoadCell.refreshDataSet(); //refresh the dataset to be sure that the known mass is measured correct
 	float totalWeight = LoadCell.getData();
-	int currentSpoolWeight = totalWeight - weight;
-	DisplayLine(0, "Spool Weight: " + String(currentSpoolWeight));
-	DisplayLine(1, "Long Press to Accept/Click to Cancel");
-	if (CRotaryDialButton::waitButton(false, -1) == CRotaryDialButton::BTN_LONGPRESS) {
-		// accepted new weight
-	}
+	SpoolWeights[SPOOL_INDEX] = totalWeight - weight;
+	DisplayLine(0, "Spool Weight: " + String(SpoolWeights[SPOOL_INDEX]));
+	ClickContinue();
 }
 
 // read or store values in EEPROM
@@ -251,7 +272,10 @@ bool SavedSettings(bool save, bool bOnlySignature)
 // save the array of weights and the current spool to the eeprom
 void SaveSpoolSettings(MenuItem* menu)
 {
+	tft.fillScreen(TFT_BLACK);
 	SavedSettings(true);
+	DisplayLine(0, "Settings Saved");
+	delay(1000);
 }
 
 // save the array of weights and the current spool to the eeprom
@@ -266,11 +290,11 @@ void Calibrate(MenuItem* menu)
 	int weight = 1000;
 	MenuItem weightMenu = { eTextInt, false, "Enter Grams: %d", GetIntegerValue, &weight, 1, 2000 };
 	tft.fillScreen(TFT_BLACK);
-	DisplayLine(0, "Remove spools");
+	DisplayLine(0, "Remove spool");
 	ClickContinue();
 
 	boolean _resume = false;
-	DisplayLine(0, "Setting Tare");
+	DisplayLine(0, "Setting Tare...");
 	LoadCell.update();
 	LoadCell.tare();
 	DisplayLine(0, "Tare Complete");
@@ -284,24 +308,13 @@ void Calibrate(MenuItem* menu)
 	GetIntegerValue(&weightMenu);
 	tft.fillScreen(TFT_BLACK);
 	known_mass = (float)weight;
-	DisplayLine(0, "Mass: " + String(known_mass));
+	DisplayLine(0, "Calibrating Weight: " + String(known_mass));
 	// get the cell reading and add to dataset
 	LoadCell.update();
 	delay(500);
 	LoadCell.refreshDataSet(); //refresh the dataset to be sure that the known mass is measured correct
 	calibrationValue = LoadCell.getNewCalibration(known_mass); //get the new calibration value
 	DisplayLine(0, "New Calibration: " + String(calibrationValue));
-	delay(500);
-
-	CRotaryDialButton::Button btn;
-	btn = ClickContinue("Long Press to Save");
-	if (btn == CRotaryDialButton::BTN_LONGPRESS) {
-		SavedSettings(true);
-		DisplayLine(0, "Calibration Saved: " + String(calibrationValue));
-	}
-	else {
-		DisplayLine(0, "Calibration Not Saved");
-	}
 	ClickContinue();
 }
 
