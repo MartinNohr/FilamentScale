@@ -42,32 +42,29 @@ void setup() {
     MenuStack.top()->index = 0;
     MenuStack.top()->offset = 0;
 	// read the saved settings after checking the version
-	Serial.println("tare: " + String(tareOffset));
-	Serial.println("cal: " + String(calibrationValue));
 	SavedSettings(false, true);
 	SavedSettings(false);
-	Serial.println("tare: " + String(tareOffset));
-	Serial.println("cal: " + String(calibrationValue));
 	// a sanity check
 	if (calibrationValue > 5000 || calibrationValue < 10) {
-		Serial.println("bad calval: " + String(calibrationValue));
+		DisplayLine(0, "bad calval: " + String(calibrationValue), TFT_RED);
+		delay(1000);
 		calibrationValue = 500.0;
 	}
-
     LoadCell.begin();
     // tare precision can be improved by adding a few seconds of stabilizing time, 2000 in this case
     LoadCell.start(2000, false);	// false means don't tare the scale on startup
     if (LoadCell.getTareTimeoutFlag()) {
 		DisplayLine(0, "LoadCell Failed", TFT_RED);
-		delay(5000);
-        Serial.println("Timeout, check MCU>HX711 wiring and pin designations");
+		delay(1000);
+		DisplayLine(0, "Timeout, check MCU>HX711", TFT_RED);
+		delay(1000);
     }
 	else {
         LoadCell.setCalFactor(calibrationValue); // set calibration factor (float)
 		LoadCell.update();
 		LoadCell.setTareOffset(tareOffset);
-		Serial.println("Startup is complete");
 		DisplayLine(0, "LoadCell Initialized", TFT_GREEN);
+		DisplayLine(1, "Startup is complete", TFT_GREEN);
 		delay(500);
 	}
     while (!LoadCell.update())
@@ -216,14 +213,11 @@ bool SavedSettings(bool save, bool bOnlySignature)
 	int blockpointer = 0;
 	for (int ix = 0; ix < (sizeof(saveValueList) / sizeof(*saveValueList)); blockpointer += saveValueList[ix++].size) {
 		if (save) {
-			Serial.println("tare: " + String(tareOffset));
-			Serial.println("cal: " + String(calibrationValue));
 			size_t written;
 			written = EEPROM.writeBytes(blockpointer, saveValueList[ix].val, saveValueList[ix].size);
 			if (ix == 0 && bOnlySignature) {
 				break;
 			}
-			Serial.println("block: " + String(blockpointer) + " written: " + String(written));
 		}
 		else {  // load
 			if (ix == 0) {
@@ -247,9 +241,6 @@ bool SavedSettings(bool save, bool bOnlySignature)
 	}
 	if (save) {
 		retvalue = EEPROM.commit();
-		Serial.println("commit: " + String(retvalue));
-		Serial.println("tare: " + String(tareOffset));
-		Serial.println("cal: " + String(calibrationValue));
 	}
 	else {
 	}
@@ -299,7 +290,6 @@ void Calibrate(MenuItem* menu)
 	delay(500);
 	LoadCell.refreshDataSet(); //refresh the dataset to be sure that the known mass is measured correct
 	calibrationValue = LoadCell.getNewCalibration(known_mass); //get the new calibration value
-	Serial.println("newcal: " + String(calibrationValue));
 	DisplayLine(0, "New Calibration: " + String(calibrationValue));
 	delay(500);
 
@@ -339,16 +329,12 @@ bool RunMenus(int button)
 		if (!MenuStack.top()->menu[ix].valid) {
 			continue;
 		}
-		//Serial.println("menu button: " + String(button));
 		if (button == BTN_SELECT && menuix == MenuStack.top()->index) {
-			//Serial.println("got match " + String(menuix) + " " + String(MenuStack.top()->index));
 			gotmatch = true;
-			//Serial.println("clicked on menu");
 			// got one, service it
 			switch (MenuStack.top()->menu[ix].op) {
 			case eText:
 			case eTextInt:
-			case eTextCurrentFile:
 			case eBool:
 				bMenuChanged = true;
 				if (MenuStack.top()->menu[ix].function) {
@@ -374,7 +360,6 @@ bool RunMenus(int button)
 					bMenuChanged = true;
 					MenuStack.top()->index = 0;
 					MenuStack.top()->offset = 0;
-					//Serial.println("change menu");
 					// check if the new menu is an eList and if it has a value, if it does, set the index to it
 					if (MenuStack.top()->menu->op == eList && MenuStack.top()->menu->value) {
 						int ix = *(int*)MenuStack.top()->menu->value;
@@ -429,7 +414,6 @@ void ShowMenu(struct MenuItem* menu)
 		case eIfEqual:
 			// skip the next one if match, only booleans are handled so far
 			skip = *(bool*)menu->value != (menu->min ? true : false);
-			//Serial.println("ifequal test: skip: " + String(skip));
 			break;
 		case eElse:
 			skip = !skip;
@@ -450,7 +434,6 @@ void ShowMenu(struct MenuItem* menu)
 		switch (menu->op) {
 		case eTextInt:
 		case eText:
-		case eTextCurrentFile:
 			menu->valid = true;
 			if (menu->change != NULL) {
 				(*menu->change)(menu, -2);
@@ -463,17 +446,9 @@ void ShowMenu(struct MenuItem* menu)
 				else if (menu->op == eTextInt) {
 					sprintf(line, menu->text, (int)(val / pow10(menu->decimals)), val % (int)(pow10(menu->decimals)));
 				}
-				//Serial.println("menu text1: " + String(line));
 			}
 			else {
-				if (menu->op == eTextCurrentFile) {
-					//sprintf(line, menu->text, MakeMIWFilename(FileNames[CurrentFileIndex], false).c_str());
-					//Serial.println("menu text2: " + String(line));
-				}
-				else {
-					strcpy(line, menu->text);
-					//Serial.println("menu text3: " + String(line));
-				}
+				strcpy(line, menu->text);
 			}
 			// next line
 			++y;
@@ -496,7 +471,6 @@ void ShowMenu(struct MenuItem* menu)
 				bool* pb = (bool*)menu->value;
 				//*pb &= 1;
 				sprintf(line, menu->text, *pb ? menu->on : menu->off);
-				//Serial.println("bool line: " + String(line));
 			}
 			else {
 				strcpy(line, menu->text);
@@ -554,8 +528,6 @@ void ToggleBool(MenuItem* menu)
 	if (menu->change != NULL) {
 		(*menu->change)(menu, -1);
 	}
-	//Serial.println("autoload: " + String(bAutoLoadSettings));
-	//Serial.println("fixed time: " + String(bFixedTime));
 }
 
 // get integer values
@@ -786,7 +758,6 @@ bool HandleMenus()
 	// check some conditions that should redraw the menu
 	if (lastMenu != MenuStack.top()->index || lastOffset != MenuStack.top()->offset) {
 		bMenuChanged = true;
-		//Serial.println("menu changed");
 	}
 	return didsomething;
 }
@@ -797,8 +768,6 @@ enum CRotaryDialButton::Button ReadButton()
 	enum CRotaryDialButton::Button retValue = BTN_NONE;
 	// read the next button, or NONE it none there
 	retValue = CRotaryDialButton::dequeue();
-	//if (retValue != BTN_NONE)
-	//	Serial.println("button:" + String(retValue));
 	return retValue;
 }
 

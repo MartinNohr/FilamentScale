@@ -79,7 +79,6 @@ bool SavedSettings(bool save, bool bOnlySignature = false);
 enum eDisplayOperation {
 	eText,              // handle text with optional %s value
 	eTextInt,           // handle text with optional %d value
-	eTextCurrentFile,   // adds current basefilename for %s in string
 	eBool,              // handle bool using %s and on/off values
 	eMenu,              // load another menu
 	eExit,              // closes this menu
