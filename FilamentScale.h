@@ -126,7 +126,7 @@ MenuItem ScaleMenu[] = {
 	{eExit,false,"Previous Menu"},
 	{eText,false,"Tare (reset zero)",SetTare},
 	{eText,false,"Calibrate Weight",Calibrate},
-	{eTextInt,false,"Length From Wt: %d.%d",GetIntegerValue,&nLengthConversion,30000,35000,2},
+	{eTextInt,false,"Wt to Length: %d.%d",GetIntegerValue,&nLengthConversion,30000,35000,2},
 	{eExit,false,"Previous Menu"},
 	// make sure this one is last
 	{eTerminate}

@@ -65,7 +65,7 @@ void setup() {
 		LoadCell.setTareOffset(tareOffset);
 		DisplayLine(0, "LoadCell Initialized", TFT_GREEN);
 		DisplayLine(1, "Startup is complete", TFT_GREEN);
-		delay(500);
+		delay(1000);
 	}
     while (!LoadCell.update())
 		;
@@ -582,12 +582,7 @@ void GetIntegerValue(MenuItem* menu)
 		// show slider bar
 		tft.fillRect(0, 2 * tft.fontHeight(), tft.width() - 1, 6, TFT_BLACK);
 		DrawProgressBar(0, 2 * tft.fontHeight() + 5, tft.width() - 1, 6, map(*(int*)menu->value, menu->min, menu->max, 0, 100));
-		if (menu->decimals == 0) {
-			sprintf(line, menu->text, *(int*)menu->value);
-		}
-		else {
-			sprintf(line, menu->text, *(int*)menu->value / 10, *(int*)menu->value % 10);
-		}
+		sprintf(line, menu->text, *(int*)menu->value / (int)pow10(menu->decimals), *(int*)menu->value % (int)pow10(menu->decimals));
 		DisplayLine(0, line);
 		DisplayLine(4, stepSize == -1 ? "Reset: long press (Click +)" : "step: " + String(stepSize) + " (Click +)");
 		if (menu->change != NULL && oldVal != *(int*)menu->value) {
