@@ -117,8 +117,15 @@ MenuItem SpoolMenu[] = {
 	{eTextInt,false,"Spool Weight: %d g",ChangeSpoolWeight,NULL,1,2000,0,NULL,NULL,SetMenuDisplayWeight},
 	{eText,false,"Save Spool Settings",SaveSpoolSettings},
 	{eText,false,"Load Spool Settings",LoadSpoolSettings},
-	{eText,false,"Calibrate Weight",Calibrate},
 	{eTextInt,false,"Full Spool Wt: %d g",GetIntegerValue,&fullSpoolFilament,100,2000},
+	{eExit,false,"Previous Menu"},
+	// make sure this one is last
+	{eTerminate}
+};
+MenuItem ScaleMenu[] = {
+	{eExit,false,"Previous Menu"},
+	{eText,false,"Tare (reset zero)",SetTare},
+	{eText,false,"Calibrate Weight",Calibrate},
 	{eTextInt,false,"Length From Wt: %d.%d",GetIntegerValue,&nLengthConversion,30000,35000,2},
 	{eExit,false,"Previous Menu"},
 	// make sure this one is last
@@ -127,7 +134,7 @@ MenuItem SpoolMenu[] = {
 MenuItem MainMenu[] = {
 	{eExit,false,"Main Screen"},
 	{eMenu,false,"Spool Settings",{.menu = SpoolMenu}},
-	{eText,false,"Tare (reset zero)",SetTare},
+	{eMenu,false,"Scale Settings",{.menu = ScaleMenu}},
 	{eReboot,false,"Reboot System"},
 	{eExit,false,"Main Screen"},
 	// make sure this one is last
