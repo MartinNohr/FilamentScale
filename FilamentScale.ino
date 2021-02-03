@@ -147,12 +147,20 @@ void loop() {
 			double elapsedTime = difftime(timeNow, usageStartTime);
 			int seconds = (int)round(elapsedTime);
 			if (seconds) {
-				double rate = (double)(usageStartAmount - filamentWeight) / ((double)seconds);
+				double rate = (double)(usageStartAmount - filamentWeight) / seconds * 60.0;
 				rate = constrain(rate, 0, rate);
-				st = "Usage: " + String(rate * 60) + " g/Min";
+				st = "Usage: " + String(rate, 1) + " g/Min";
 				DisplayLine(4, st);
-				st = String(rate * 60 * 60) + " g/Hour";
-				DisplayLine(5, st);
+				// now get remaining time
+				if (rate > 0.0) {
+					double minutesLeft = filamentWeight / rate;
+					st = "Time Left: " + String((int)(minutesLeft / 60.0)) + ":" + String((int)minutesLeft % 60) + " H:M";
+					DisplayLine(5, st);
+				}
+				else
+				{
+					DisplayLine(5, "");
+				}
 			}
 		}
     }
