@@ -115,16 +115,16 @@ void loop() {
 	if (!bSettingsMode && LoadCell.update())
 		newDataReady = true;
 
+	static unsigned long timeholder = 0;
     // get smoothed value from the dataset:
 	if (!bSettingsMode && newDataReady) {
-		if (millis() > t + serialPrintInterval) {
+		if (millis() > timeholder + serialPrintInterval) {
 			float weight = LoadCell.getData();
             newDataReady = 0;
-            t = millis();
+            timeholder = millis();
 			int filamentWeight = (int)((weight - SpoolWeights[SPOOL_INDEX]) + 0.5);
 			filamentWeight = constrain(filamentWeight, 0, filamentWeight);
-			// TODO: the 1000 should be adjustable as the full value of a spool
-			int percent = (filamentWeight * 100 / 1000);
+			int percent = (filamentWeight * 100 / fullSpoolFilament);
             percent = constrain(percent, 0, 100);
 			DrawProgressBar(0, 0, tft.width() - 1, 12, percent);
             String st;
@@ -132,7 +132,6 @@ void loop() {
             DisplayLine(1, st);
 			st = "Weight: " + String(filamentWeight) + " g";
 			DisplayLine(2, st);
-			// TODO: conversion from gram to m should be settable
 			float length = filamentWeight * LENGTH_CONVERSION / 1000.0;
 			length = constrain(length, 0, length);
 			st = "Length: " + String(length) + " m";
