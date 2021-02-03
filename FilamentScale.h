@@ -7,6 +7,7 @@
 #include <queue>
 #include "RotaryDialButton.h"
 #include "fonts.h"
+#include <time.h>
 
 char VersionString[] = "01.00";
 
@@ -74,7 +75,8 @@ void LoadSpoolSettings(MenuItem* menu = NULL);
 void ChangeSpoolWeight(MenuItem* menu);
 void WeighEmptySpool(MenuItem* menu);
 void SetMenuDisplayWeight(MenuItem* menu, int flag);
-void SetTare(MenuItem* menu);
+void SetTare(MenuItem* menu = NULL);
+void ResetUsage(MenuItem* menu = NULL);
 bool SavedSettings(bool save, bool bOnlySignature = false);
 
 enum eDisplayOperation {
@@ -136,6 +138,7 @@ MenuItem ScaleMenu[] = {
 };
 MenuItem MainMenu[] = {
 	{eExit,false,"Main Screen"},
+	{eText,false,"Reset Usage Rate",ResetUsage},
 	{eMenu,false,"Spool Settings",{.menu = SpoolMenu}},
 	{eMenu,false,"Scale Settings",{.menu = ScaleMenu}},
 	{eReboot,false,"Reboot System"},
@@ -164,3 +167,7 @@ const int HX711_sck = 22; //mcu > HX711 sck pin
 
 // HX711 constructor:
 HX711_ADC LoadCell(HX711_dout, HX711_sck);
+
+// consumption rate numbers
+time_t usageStartTime = 0;
+long usageStartAmount = 0;

@@ -86,13 +86,15 @@ void setup() {
     }
 	// clear the button buffer
 	CRotaryDialButton::clear();
+	// reset the usage counters
+	ResetUsage();
 	tft.fillScreen(TFT_BLACK);
 }
 
 void loop() {
 	static bool bLastSettingsMode = true;
     static boolean newDataReady = 0;
-    const int serialPrintInterval = 1000; //increase value to slow down serial print activity
+    const int serialPrintInterval = 2000; //increase value to slow down serial print activity
 
     static bool didsomething = false;
 	if (bSettingsMode) {
@@ -136,6 +138,22 @@ void loop() {
 			length = constrain(length, 0, length);
 			st = "Length: " + String(length) + " m";
 			DisplayLine(3, st);
+			// if the usage is 0, then it was reset, so we get the latest value
+			if (usageStartAmount == 0) {
+				usageStartAmount = filamentWeight;
+			}
+			// calculate usage rate
+			time_t timeNow = time(NULL);
+			double elapsedTime = difftime(timeNow, usageStartTime);
+			int seconds = (int)round(elapsedTime);
+			if (seconds) {
+				double rate = (double)(usageStartAmount - filamentWeight) / ((double)seconds);
+				rate = constrain(rate, 0, rate);
+				st = "Usage: " + String(rate * 60) + " g/Min";
+				DisplayLine(4, st);
+				st = String(rate * 60 * 60) + " g/Hour";
+				DisplayLine(5, st);
+			}
 		}
     }
 }
@@ -161,6 +179,20 @@ void SetTare(MenuItem* menu)
 	tareOffset = LoadCell.getTareOffset();
 	DisplayLine(0, "Scale has been zeroed");
 	ClickContinue();
+}
+
+// reset the usage numbers
+void ResetUsage(MenuItem* menu)
+{
+	// set the start time
+	time(&usageStartTime);
+	// clear the usage
+	usageStartAmount = 0;
+	tft.fillScreen(TFT_BLACK);
+	if (menu) {
+		DisplayLine(0, "Usage Rate Reset");
+		delay(1000);
+	}
 }
 
 void SetMenuDisplayWeight(MenuItem* menu, int flag)
