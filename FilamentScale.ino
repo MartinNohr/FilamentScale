@@ -157,6 +157,8 @@ void SetTare(MenuItem* menu)
 	DisplayLine(0, "Setting Scale to Zero");
 	LoadCell.update();
 	LoadCell.tare();
+	// get the value so we can save it
+	tareOffset = LoadCell.getTareOffset();
 	DisplayLine(0, "Scale has been zeroed");
 	ClickContinue();
 }
