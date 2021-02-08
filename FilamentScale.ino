@@ -349,7 +349,7 @@ void Calibrate(MenuItem* menu)
 	GetIntegerValue(&weightMenu);
 	tft.fillScreen(TFT_BLACK);
 	known_mass = (float)weight;
-	DisplayLine(0, "Calibrating Weight: " + String(known_mass));
+	DisplayLine(0, "Calibrating Wt: " + String(known_mass));
 	// get the cell reading and add to dataset
 	LoadCell.update();
 	delay(500);
