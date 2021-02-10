@@ -5,6 +5,12 @@
 //#include <vector>
 #include <stack>
 #include <queue>
+
+#define DIAL_BTN 15
+#define DIAL_A 13
+#define DIAL_B 12
+#define FRAMEBUTTON 22
+
 #include "RotaryDialButton.h"
 #include "fonts.h"
 #include <time.h>

@@ -125,7 +125,7 @@
   </ImportGroup>
   <ProjectExtensions>
     <VisualStudio>
-      <UserProperties arduino.upload.port="COM8" config.Debug.customdebug_esp32_ttgo-t1_debugger_type="none" />
+      <UserProperties arduino.upload.port="COM11" config.Debug.customdebug_esp32_ttgo-t1_debugger_type="none" />
     </VisualStudio>
   </ProjectExtensions>
 </Project>

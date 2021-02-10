@@ -1,8 +1,4 @@
 #pragma once
-#define DIAL_BTN 15
-#define DIAL_A 12
-#define DIAL_B 13
-#define FRAMEBUTTON 22
 
 class CRotaryDialButton {
 public:
