@@ -63,12 +63,19 @@ void setup() {
         LoadCell.setCalFactor(calibrationValue); // set calibration factor (float)
 		LoadCell.update();
 		LoadCell.setTareOffset(tareOffset);
-		DisplayLine(0, "LoadCell Initialized", TFT_GREEN);
-		DisplayLine(1, "Startup is complete", TFT_GREEN);
+		DisplayLine(0, "Startup complete", TFT_GREEN);
 		delay(1000);
 	}
-    while (!LoadCell.update())
-		;
+	int tries = 100;
+	while (!LoadCell.update()) {
+		if (tries-- <= 0) {
+			DisplayLine(0, "Loadcell not responding", TFT_RED);
+			while (true) {
+				delay(1000);
+			}
+		}
+		delay(10);
+	}
     Serial.print("Calibration value: ");
     Serial.println(LoadCell.getCalFactor());
     Serial.print("HX711 measured conversion time ms: ");
