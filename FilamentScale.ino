@@ -260,7 +260,7 @@ void CalculateSpoolWeight(MenuItem* menu)
 	5. Save to eeprom?
 	*/
 	int weight = 1200;
-	MenuItem weightMenu = { eTextInt, false, "Enter Total Grams: %d", GetIntegerValue, &weight, 1, 2000 };
+	MenuItem weightMenu = { eTextInt, "Enter Total Grams: %d", GetIntegerValue, &weight, 1, 2000 };
 	DisplayLine(0, "Load New Spool");
 	ClickContinue();
 	GetIntegerValue(&weightMenu);
@@ -336,7 +336,7 @@ void LoadSpoolSettings(MenuItem* menu)
 void Calibrate(MenuItem* menu)
 {
 	int weight = 1000;
-	MenuItem weightMenu = { eTextInt, false, "Enter Grams: %d", GetIntegerValue, &weight, 1, 2000 };
+	MenuItem weightMenu = { eTextInt, "Enter Grams: %d", GetIntegerValue, &weight, 1, 2000 };
 	tft.fillScreen(TFT_BLACK);
 	DisplayLine(0, "Remove spool");
 	ClickContinue();
@@ -386,8 +386,8 @@ bool RunMenus(int button)
 	MenuInfo* oldMenu;
 	bool bExit = false;
 	for (int ix = 0; !gotmatch && MenuStack.top()->menu[ix].op != eTerminate; ++ix) {
-		// see if this is one is valid
-		if (!MenuStack.top()->menu[ix].valid) {
+		// see if this one is valid
+		if (!bMenuValid[ix]) {
 			continue;
 		}
 		if (button == BTN_SELECT && menuix == MenuStack.top()->index) {
@@ -469,8 +469,12 @@ void ShowMenu(struct MenuItem* menu)
 	char line[100];
 	bool skip = false;
 	// loop through the menu
-	for (; menu->op != eTerminate; ++menu) {
-		menu->valid = false;
+	for (int menix = 0; menu->op != eTerminate; ++menu, ++menix) {
+		// make sure menu valid vector is big enough
+		if (bMenuValid.size() < menix + 1) {
+			bMenuValid.resize(menix + 1);
+		}
+		bMenuValid[menix] = false;
 		switch (menu->op) {
 		case eIfEqual:
 			// skip the next one if match, only booleans are handled so far
@@ -484,7 +488,7 @@ void ShowMenu(struct MenuItem* menu)
 			break;
 		}
 		if (skip) {
-			menu->valid = false;
+			bMenuValid[menix] = false;
 			continue;
 		}
 		char line[100], xtraline[100];
@@ -495,7 +499,7 @@ void ShowMenu(struct MenuItem* menu)
 		switch (menu->op) {
 		case eTextInt:
 		case eText:
-			menu->valid = true;
+			bMenuValid[menix] = true;
 			if (menu->change != NULL) {
 				(*menu->change)(menu, -2);
 			}
@@ -515,7 +519,7 @@ void ShowMenu(struct MenuItem* menu)
 			++y;
 			break;
 			//case eList:
-			//	menu->valid = true;
+			//	valid = true;
 			//	// the list of macro files
 			//	// min holds the macro number
 			//	val = menu->min;
@@ -526,7 +530,7 @@ void ShowMenu(struct MenuItem* menu)
 			//	++y;
 			//	break;
 		case eBool:
-			menu->valid = true;
+			bMenuValid[menix] = true;
 			if (menu->value) {
 				// clean extra bits, just in case
 				bool* pb = (bool*)menu->value;
@@ -542,7 +546,7 @@ void ShowMenu(struct MenuItem* menu)
 		case eMenu:
 		case eExit:
 		case eReboot:
-			menu->valid = true;
+			bMenuValid[menix] = true;
 			if (menu->value) {
 				sprintf(xtraline, menu->text, *(int*)menu->value);
 			}
@@ -826,7 +830,7 @@ bool HandleMenus()
 enum CRotaryDialButton::Button ReadButton()
 {
 	enum CRotaryDialButton::Button retValue = BTN_NONE;
-	// read the next button, or NONE it none there
+	// read the next button, or NONE if none there
 	retValue = CRotaryDialButton::dequeue();
 	return retValue;
 }

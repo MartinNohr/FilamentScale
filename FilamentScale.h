@@ -100,9 +100,9 @@ enum eDisplayOperation {
 	eTerminate,         // must be last in a menu
 };
 
+std::vector<bool> bMenuValid;   // set to indicate menu item  is valid
 struct MenuItem {
 	enum eDisplayOperation op;
-	bool valid;                         // set to true if displayed for use
 	const char* text;                   // text to display
 	union {
 		void(*function)(MenuItem*);     // called on click
@@ -120,35 +120,35 @@ struct MenuItem {
 typedef MenuItem MenuItem;
 
 MenuItem SpoolMenu[] = {
-	{eExit,false,"Previous Menu"},
-	{eTextInt,false,"Active Spool: %2d",GetIntegerValue,&nActiveSpool,1,MAX_SPOOL_WEIGHTS},
-	{eText,false,"Spool Wt from Full",CalculateSpoolWeight},
-	{eTextInt,false,"Weigh Empty Spool",WeighEmptySpool},
-	{eTextInt,false,"Empty Spool Wt: %d g",ChangeSpoolWeight,NULL,1,2000,0,NULL,NULL,SetMenuDisplayWeight},
-	{eTextInt,false,"Full Spool Wt: %d g",GetIntegerValue,&fullSpoolFilament,100,2000},
-	{eText,false,"Save Settings",SaveSpoolSettings},
-	//{eText,false,"Load Spool Settings",LoadSpoolSettings},
-	{eExit,false,"Previous Menu"},
+	{eExit,"Previous Menu"},
+	{eTextInt,"Active Spool: %2d",GetIntegerValue,&nActiveSpool,1,MAX_SPOOL_WEIGHTS},
+	{eText,"Spool Wt from Full",CalculateSpoolWeight},
+	{eTextInt,"Weigh Empty Spool",WeighEmptySpool},
+	{eTextInt,"Empty Spool Wt: %d g",ChangeSpoolWeight,NULL,1,2000,0,NULL,NULL,SetMenuDisplayWeight},
+	{eTextInt,"Full Spool Wt: %d g",GetIntegerValue,&fullSpoolFilament,100,2000},
+	{eText,"Save Settings",SaveSpoolSettings},
+	//{eText,"Load Spool Settings",LoadSpoolSettings},
+	{eExit,"Previous Menu"},
 	// make sure this one is last
 	{eTerminate}
 };
 MenuItem ScaleMenu[] = {
-	{eExit,false,"Previous Menu"},
-	{eText,false,"Tare (reset zero)",SetTare},
-	{eText,false,"Calibrate Weight",Calibrate},
-	{eTextInt,false,"Wt to Length: %d.%d",GetIntegerValue,&nLengthConversion,30000,40000,2},
-	{eText,false,"Save Settings",SaveSpoolSettings},
-	{eExit,false,"Previous Menu"},
+	{eExit,"Previous Menu"},
+	{eText,"Tare (reset zero)",SetTare},
+	{eText,"Calibrate Weight",Calibrate},
+	{eTextInt,"Wt to Length: %d.%d",GetIntegerValue,&nLengthConversion,30000,40000,2},
+	{eText,"Save Settings",SaveSpoolSettings},
+	{eExit,"Previous Menu"},
 	// make sure this one is last
 	{eTerminate}
 };
 MenuItem MainMenu[] = {
-	{eExit,false,"Main Screen"},
-	{eText,false,"Reset Usage Rate",ResetUsage},
-	{eMenu,false,"Spool Settings",{.menu = SpoolMenu}},
-	{eMenu,false,"Scale Settings",{.menu = ScaleMenu}},
-	{eReboot,false,"Reboot System"},
-	{eExit,false,"Main Screen"},
+	{eExit,"Main Screen"},
+	{eText,"Reset Usage Rate",ResetUsage},
+	{eMenu,"Spool Settings",{.menu = SpoolMenu}},
+	{eMenu,"Scale Settings",{.menu = ScaleMenu}},
+	{eReboot,"Reboot System"},
+	{eExit,"Main Screen"},
 	// make sure this one is last
 	{eTerminate}
 };
