@@ -48,7 +48,6 @@ void setup() {
 	if (calibrationValue > 5000 || calibrationValue < -200) {
 		DisplayLine(0, "suspicious calval: " + String(calibrationValue), TFT_RED);
 		delay(1000);
-		//calibrationValue = 500.0;
 	}
     LoadCell.begin();
     // tare precision can be improved by adding a few seconds of stabilizing time, 2000 in this case
