@@ -125,7 +125,7 @@ MenuItem SpoolMenu[] = {
 	{eText,"Spool Wt from Full",CalculateSpoolWeight},
 	{eTextInt,"Weigh Empty Spool",WeighEmptySpool},
 	{eTextInt,"Empty Spool Wt: %d g",ChangeSpoolWeight,NULL,1,2000,0,NULL,NULL,SetMenuDisplayWeight},
-	{eTextInt,"Full Spool Wt: %d g",GetIntegerValue,&fullSpoolFilament,100,2000},
+	{eTextInt,"Full Filament Wt: %d g",GetIntegerValue,&fullSpoolFilament,100,2000},
 	{eText,"Save Settings",SaveSpoolSettings},
 	//{eText,"Load Spool Settings",LoadSpoolSettings},
 	{eExit,"Previous Menu"},
