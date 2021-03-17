@@ -44,6 +44,11 @@ void setup() {
 	// read the saved settings after checking the version
 	SavedSettings(false, true);
 	SavedSettings(false);
+	// 0 can't be used, it will cause a calibration failure later
+	if (calibrationValue == 0.0)
+		calibrationValue = 400;
+	Serial.println("calval: " + String(calibrationValue));
+	SetLcdBrightness(nDisplayBrightness);
 	// a sanity check
 	if (calibrationValue > 5000 || calibrationValue < -200) {
 		DisplayLine(0, "suspicious calval: " + String(calibrationValue), TFT_RED);
@@ -66,16 +71,15 @@ void setup() {
 		delay(1000);
 	}
 	int tries = 100;
-	while (!LoadCell.update()) {
+	while (bFoundLoadcell && !LoadCell.update()) {
 		if (tries-- <= 0) {
 			DisplayLine(0, "Loadcell not responding", TFT_RED);
-			while (true) {
-				delay(1000);
-			}
+			bFoundLoadcell = false;
 		}
 		delay(10);
 	}
-    Serial.print("Calibration value: ");
+	LoadCell.refreshDataSet();
+	Serial.print("Calibration value: ");
     Serial.println(LoadCell.getCalFactor());
     Serial.print("HX711 measured conversion time ms: ");
     Serial.println(LoadCell.getConversionTime());
@@ -87,7 +91,7 @@ void setup() {
     if (LoadCell.getSPS() < 7) {
         Serial.println("!!Sampling rate is lower than specification, check MCU>HX711 wiring and pin designations");
     }
-    else if (LoadCell.getSPS() > 100) {
+    else if ((int)LoadCell.getSPS() > 100) {
         Serial.println("!!Sampling rate is higher than specification, check MCU>HX711 wiring and pin designations");
     }
 	// clear the button buffer
@@ -99,10 +103,9 @@ void setup() {
 
 void loop() {
 	static bool bLastSettingsMode = true;
-    static boolean newDataReady = 0;
-    const int serialPrintInterval = 2000; //increase value to slow down serial print activity
-
-    static bool didsomething = false;
+	static boolean newDataReady = false;
+	static bool didsomething = false;
+	static int lastMinute = -1;
 	if (bSettingsMode) {
 		didsomething = HandleMenus();
 	}
@@ -120,16 +123,16 @@ void loop() {
 	}
 
     // check for new data/start next conversion:
-	if (!bSettingsMode && LoadCell.update())
+	if (!bSettingsMode && bFoundLoadcell && LoadCell.update())
 		newDataReady = true;
 
 	static unsigned long timeholder = 0;
     // get smoothed value from the dataset:
 	if (!bSettingsMode && newDataReady) {
-		if (millis() > timeholder + serialPrintInterval) {
+		if (millis() > timeholder + (serialPrintInterval * 1000)) {
 			float weight = LoadCell.getData();
-            newDataReady = 0;
-            timeholder = millis();
+			newDataReady = false;
+			timeholder = millis();
 			int filamentWeight = (int)((weight - SpoolWeights[SPOOL_INDEX]) + 0.5);
 			filamentWeight = constrain(filamentWeight, 0, filamentWeight);
 			int percent = (filamentWeight * 100 / fullSpoolFilament);
@@ -170,6 +173,14 @@ void loop() {
 			}
 		}
     }
+}
+
+// set LCD brighntess, 0 to 100
+void SetLcdBrightness(uint b)
+{
+	uint val = constrain(b, 0, 100);
+	int bright = map(val, 0, 100, 0, 255);
+	ledcWrite(ledChannel, bright);
 }
 
 CRotaryDialButton::Button ClickContinue(char* text=NULL)
@@ -215,6 +226,11 @@ void SetMenuDisplayWeight(MenuItem* menu, int flag)
 	if (flag == -2) {
 		menu->value = &SpoolWeights[SPOOL_INDEX];
 	}
+}
+
+void SetMenuDisplayBrightness(MenuItem* menu, int flag)
+{
+	SetLcdBrightness(nDisplayBrightness);
 }
 
 void ChangeSpoolWeight(MenuItem* menu)
@@ -850,4 +866,15 @@ void DisplayLine(int line, String text, int16_t color)
 	tft.fillRect(0, y, tft.width(), charHeight, TFT_BLACK);
 	tft.setTextColor(color);
 	tft.drawString(text, 0, y);
+}
+
+void SetFactorySettings(MenuItem* menu)
+{
+	EEPROM.begin(1024);
+	byte data[2];
+	data[0] = 0;
+	data[1] = 0;
+	EEPROM.writeBytes(0, data, sizeof(data));
+	EEPROM.commit();
+	ESP.restart();
 }

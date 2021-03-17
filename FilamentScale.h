@@ -5,6 +5,7 @@
 //#include <vector>
 #include <stack>
 #include <queue>
+#include <array>
 
 #define DIAL_BTN 15
 #define DIAL_A 13
@@ -51,6 +52,7 @@ long tareOffset;
 long nLengthConversion = 33312;		// implied 2 decimals
 #define LENGTH_CONVERSION ((float)(nLengthConversion) / 100)
 int fullSpoolFilament = 1000;		// grams on a full spool
+int serialPrintInterval = 2; //increase value to slow down serial print activity, seconds
 
 struct saveValues {
     void* val;
@@ -65,6 +67,7 @@ const saveValues saveValueList[] = {
 	{&fullSpoolFilament, sizeof(fullSpoolFilament)},
 	{&nActiveSpool, sizeof(nActiveSpool)},
 	{SpoolWeights, sizeof(SpoolWeights)},
+	{&nDisplayBrightness,sizeof(nDisplayBrightness)},
 };
 
 
@@ -76,11 +79,13 @@ void CalculateSpoolWeight(MenuItem* menu = NULL);
 void Calibrate(MenuItem* menu = NULL);
 void DisplayLine(int line, String text, int16_t color = TFT_WHITE);
 void DisplayMenuLine(int line, int displine, String text);
+void SetFactorySettings(MenuItem* menu);
 void SaveSpoolSettings(MenuItem* menu = NULL);
 void LoadSpoolSettings(MenuItem* menu = NULL);
 void ChangeSpoolWeight(MenuItem* menu);
 void WeighEmptySpool(MenuItem* menu);
 void SetMenuDisplayWeight(MenuItem* menu, int flag);
+void SetMenuDisplayBrightness(MenuItem* menu, int flag);
 void SetTare(MenuItem* menu = NULL);
 void ResetUsage(MenuItem* menu = NULL);
 bool SavedSettings(bool save, bool bOnlySignature = false);
@@ -136,8 +141,19 @@ MenuItem ScaleMenu[] = {
 	{eExit,"Previous Menu"},
 	{eText,"Tare (reset zero)",SetTare},
 	{eText,"Calibrate Weight",Calibrate},
-	{eTextInt,"Wt to Length: %d.%d",GetIntegerValue,&nLengthConversion,30000,40000,2},
+	{eTextInt,"Wt to Length: %d.%02d",GetIntegerValue,&nLengthConversion,30000,40000,2},
 	{eText,"Save Settings",SaveSpoolSettings},
+	{eExit,"Previous Menu"},
+	// make sure this one is last
+	{eTerminate}
+};
+MenuItem SystemMenu[] = {
+	{eExit,"Previous Menu"},
+	{eTextInt,"Display Brightness: %d",GetIntegerValue,&nDisplayBrightness,0,100,0,NULL,NULL,SetMenuDisplayBrightness},
+	{eTextInt,"Display Update: %dS",GetIntegerValue,&serialPrintInterval,1,30},
+	{eText,"Save Settings",SaveSpoolSettings},
+	{eText,"Factory Settings",SetFactorySettings},
+	{eReboot,"Reboot System"},
 	{eExit,"Previous Menu"},
 	// make sure this one is last
 	{eTerminate}
@@ -147,7 +163,7 @@ MenuItem MainMenu[] = {
 	{eText,"Reset Usage Rate",ResetUsage},
 	{eMenu,"Spool Settings",{.menu = SpoolMenu}},
 	{eMenu,"Scale Settings",{.menu = ScaleMenu}},
-	{eReboot,"Reboot System"},
+	{eMenu,"System Settings",{.menu = SystemMenu}},
 	{eExit,"Main Screen"},
 	// make sure this one is last
 	{eTerminate}
@@ -170,6 +186,7 @@ bool bMenuChanged = true;
 // pins:
 const int HX711_dout = 21; //mcu > HX711 dout pin
 const int HX711_sck = 22; //mcu > HX711 sck pin
+bool bFoundLoadcell = true;
 
 // HX711 constructor:
 HX711_ADC LoadCell(HX711_dout, HX711_sck);
