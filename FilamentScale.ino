@@ -78,22 +78,24 @@ void setup() {
 		}
 		delay(10);
 	}
-	LoadCell.refreshDataSet();
-	Serial.print("Calibration value: ");
-    Serial.println(LoadCell.getCalFactor());
-    Serial.print("HX711 measured conversion time ms: ");
-    Serial.println(LoadCell.getConversionTime());
-    Serial.print("HX711 measured sampling rate HZ: ");
-    Serial.println(LoadCell.getSPS());
-    Serial.print("HX711 measured settlingtime ms: ");
-    Serial.println(LoadCell.getSettlingTime());
-    Serial.println("Note that the settling time may increase significantly if you use delay() in your sketch!");
-    if (LoadCell.getSPS() < 7) {
-        Serial.println("!!Sampling rate is lower than specification, check MCU>HX711 wiring and pin designations");
-    }
-    else if ((int)LoadCell.getSPS() > 100) {
-        Serial.println("!!Sampling rate is higher than specification, check MCU>HX711 wiring and pin designations");
-    }
+	if (bFoundLoadcell) {
+		LoadCell.refreshDataSet();
+		Serial.print("Calibration value: ");
+		Serial.println(LoadCell.getCalFactor());
+		Serial.print("HX711 measured conversion time ms: ");
+		Serial.println(LoadCell.getConversionTime());
+		Serial.print("HX711 measured sampling rate HZ: ");
+		Serial.println(LoadCell.getSPS());
+		Serial.print("HX711 measured settlingtime ms: ");
+		Serial.println(LoadCell.getSettlingTime());
+		Serial.println("Note that the settling time may increase significantly if you use delay() in your sketch!");
+		if (LoadCell.getSPS() < 7) {
+			Serial.println("!!Sampling rate is lower than specification, check MCU>HX711 wiring and pin designations");
+		}
+		else if ((int)LoadCell.getSPS() > 100) {
+			Serial.println("!!Sampling rate is higher than specification, check MCU>HX711 wiring and pin designations");
+		}
+	}
 	// clear the button buffer
 	CRotaryDialButton::clear();
 	// reset the usage counters
