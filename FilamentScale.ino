@@ -60,8 +60,8 @@ void setup() {
     if (LoadCell.getTareTimeoutFlag()) {
 		DisplayLine(0, "LoadCell Failed", TFT_RED);
 		delay(1000);
-		DisplayLine(0, "Timeout, check MCU>HX711", TFT_RED);
-		delay(1000);
+		DisplayLine(2, "Timeout, check MCU>HX711", TFT_RED);
+		delay(2000);
     }
 	else {
         LoadCell.setCalFactor(calibrationValue); // set calibration factor (float)
@@ -74,6 +74,7 @@ void setup() {
 	while (bFoundLoadcell && !LoadCell.update()) {
 		if (tries-- <= 0) {
 			DisplayLine(0, "Loadcell not responding", TFT_RED);
+			delay(2000);
 			bFoundLoadcell = false;
 		}
 		delay(10);
