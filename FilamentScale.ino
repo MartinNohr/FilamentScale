@@ -22,9 +22,10 @@
 
 void setup() {
     Serial.begin(115200); delay(10);
-    Serial.println("Starting...");
-    CRotaryDialButton::begin(DIAL_A, DIAL_B, DIAL_BTN);
-    tft.init();
+    //Serial.println("Starting...");
+	CRotaryDialButton::begin(DIAL_A, DIAL_B, DIAL_BTN, 0, 35, &DialSettings);
+	DialSettings.m_bToggleDial = true;
+	tft.init();
     // configure LCD PWM functionalitites
     pinMode(TFT_ENABLE, OUTPUT);
     digitalWrite(TFT_ENABLE, 1);

@@ -34,6 +34,8 @@ const int resolution = 8;
 TFT_eSPI tft = TFT_eSPI();       // Invoke custom library
 #define TFT_ENABLE 4
 // settings
+CRotaryDialButton::ROTARY_DIAL_SETTINGS DialSettings;
+
 int nDisplayBrightness = 100;           // this is in %
 
 bool bSettingsMode = false;     // set true when settings are displayed
@@ -70,11 +72,11 @@ const saveValues saveValueList[] = {
 	{&nDisplayBrightness,sizeof(nDisplayBrightness)},
 };
 
-
 // functions
 bool HandleMenus();
 void ShowMenu(struct MenuItem* menu);
 void GetIntegerValue(MenuItem* menu);
+void ToggleBool(MenuItem* menu);
 void CalculateSpoolWeight(MenuItem* menu = NULL);
 void Calibrate(MenuItem* menu = NULL);
 void DisplayLine(int line, String text, int16_t color = TFT_WHITE);
@@ -149,6 +151,7 @@ MenuItem ScaleMenu[] = {
 };
 MenuItem SystemMenu[] = {
 	{eExit,"Previous Menu"},
+	{eBool,"Dial Type: %s",ToggleBool,&DialSettings.m_bToggleDial,0,0,0,"Toggle","Pulse"},
 	{eTextInt,"Display Brightness: %d",GetIntegerValue,&nDisplayBrightness,0,100,0,NULL,NULL,SetMenuDisplayBrightness},
 	{eTextInt,"Display Update: %dS",GetIntegerValue,&serialPrintInterval,1,30},
 	{eText,"Save Settings",SaveSpoolSettings},
