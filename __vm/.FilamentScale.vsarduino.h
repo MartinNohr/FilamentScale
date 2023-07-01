@@ -6,7 +6,7 @@
 			All non-arduino files created by visual micro and all visual studio project or solution files can be freely deleted and are not required to compile a sketch (do not delete your own code!).
 			Note: debugger breakpoints are stored in '.sln' or '.asln' files, knowledge of last uploaded breakpoints is stored in the upload.vmps.xml file. Both files are required to continue a previous debug session without needing to compile and upload again
 	
-	Hardware: TTGO T1(esp32_ttgo-t1), Platform=esp32, Package=esp32
+	Hardware: TTGO T1                                                                                                                              (esp32_ttgo-t1), Platform=esp32, Package=esp32
 */
 
 #if defined(_VMICRO_INTELLISENSE)
@@ -21,7 +21,7 @@
 #define GCC_NOT_5_2_0 0
 #define WITH_POSIX 1
 #define F_CPU 240000000L
-#define ARDUINO 108013
+#define ARDUINO 108015
 #define ARDUINO_TTGO_T1 1
 #define ARDUINO_ARCH_ESP32 1
 #define ARDUINO_BOARD "TTGO_T1"
@@ -51,7 +51,7 @@
 //#define _STD_BEGIN
 //#define EMIT
 #define WARNING
-//#define _Lockit
+#define _Lockit
 #define __CLR_OR_THIS_CALL
 #define C4005
 //#define _NEW
@@ -80,12 +80,10 @@ typedef int __gnuc_va_list;
 typedef unsigned char byte;
 extern "C" void __cxa_pure_virtual() {;}
 
-//typedef long __INTPTR_TYPE__ ;
-#define __INTPTR_TYPE__ unsigned int
+typedef long __INTPTR_TYPE__ ;
 typedef long __UINTPTR_TYPE__ ;
 //typedef long __SIZE_TYPE__ 	;
 #define __SIZE_TYPE__ unsigned int
-#define __INT32_TYPE__ long
 typedef long __PTRDIFF_TYPE__;
 
 typedef long pthread_t;
@@ -105,9 +103,6 @@ public:
 	// Send a Message to the Serial Monitor via WiFi Connection 
 	void sendUserMessage(const char* theMessage) {};
 } MicroDebug;
-
-class Lockit { public: int _Lockit() {} };
-
 #include <arduino.h>
 #include <pins_arduino.h> 
 
