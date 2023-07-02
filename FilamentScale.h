@@ -10,7 +10,6 @@
 #define DIAL_BTN GPIO_NUM_15
 #define DIAL_A GPIO_NUM_13
 #define DIAL_B GPIO_NUM_12
-#define FRAMEBUTTON GPIO_NUM_22
 
 #include "RotaryDialButton.h"
 #include "fonts.h"

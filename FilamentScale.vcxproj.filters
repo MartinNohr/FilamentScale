@@ -18,6 +18,9 @@
     <None Include="Release\FilamentScale.bin">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="FilamentScale.ino">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="__vm\.FilamentScale.vsarduino.h">
