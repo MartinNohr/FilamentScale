@@ -15,7 +15,7 @@
 #include "fonts.h"
 #include <time.h>
 
-char VersionString[] = "01.00";
+char VersionString[] = "01.01";
 
 // use these to control the LCD brightness
 const int freq = 5000;

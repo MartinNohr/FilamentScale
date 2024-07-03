@@ -174,7 +174,7 @@ public:
         gpioNums[1] = btn0;
         gpioNums[2] = btn1;
         // create the rotary pulse handler
-        ESP32Encoder::useInternalWeakPullResistors = UP;
+		ESP32Encoder::useInternalWeakPullResistors = puType::up;
         encoder.attachHalfQuad(gpioB, gpioA);
         // set starting count value after attaching
         encoder.clearCount();
@@ -204,6 +204,7 @@ public:
             gpio_set_pull_mode(gpioBtn1, GPIO_PULLUP_ONLY);
 			attachInterruptArg(gpioBtn1, clickHandler, (void*)"1", FALLING);
         }
+        encoder.setFilter(1023);
     }
     // see what the next button is, return None if queue empty
     static Button peek()

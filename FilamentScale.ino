@@ -13,7 +13,7 @@
    Settling time (number of samples) and data filtering can be adjusted in the config.h file
    For calibration and storing the calibration value in eeprom, see example file "Calibration.ino"
 
-   The update() function checks for new data and starts the next conversion. In order to acheive maximum effective
+   The update() function checks for new data and starts the next conversion. In order to achieve maximum effective
    sample rate, update() should be called at least as often as the HX711 sample rate; >10Hz@10SPS, >80Hz@80SPS.
    If you have other time consuming code running (i.e. a graphical LCD), consider calling update() from an interrupt routine,
    see example file "Read_1x_load_cell_interrupt_driven.ino".
