@@ -23,7 +23,7 @@
 void setup() {
     Serial.begin(115200); delay(10);
     //Serial.println("Starting...");
-	CRotaryDialButton::begin(DIAL_A, DIAL_B, DIAL_BTN, GPIO_NUM_0, GPIO_NUM_35, &DialSettings);
+	CRotaryDialButton::begin(DIAL_A, DIAL_B, DIAL_BTN, GPIO_NUM_0, GPIO_NUM_35, (gpio_num_t)-1, (gpio_num_t)-1, &DialSettings);
 	DialSettings.m_bToggleDial = true;
 	tft.init();
     // configure LCD PWM functionalitites
@@ -43,8 +43,8 @@ void setup() {
     MenuStack.top()->index = 0;
     MenuStack.top()->offset = 0;
 	// read the saved settings after checking the version
-	SavedSettings(false, true);
-	SavedSettings(false);
+	SaveLoadSettings(false, true);
+	SaveLoadSettings(false);
 	// 0 can't be used, it will cause a calibration failure later
 	if (calibrationValue == 0.0)
 		calibrationValue = 400;
@@ -294,7 +294,7 @@ void CalculateSpoolWeight(MenuItem* menu)
 }
 
 // read or store values in EEPROM
-bool SavedSettings(bool save, bool bOnlySignature)
+bool SaveLoadSettings(bool save, bool bOnlySignature)
 {
 	EEPROM.begin(1024);
 	bool retvalue = true;
@@ -316,7 +316,7 @@ bool SavedSettings(bool save, bool bOnlySignature)
 				if (strcmp(svalue, VersionString)) {
 					DisplayLine(0, "fixing bad eeprom version...", TFT_RED);
 					delay(1000);
-					return SavedSettings(true);
+					return SaveLoadSettings(true);
 				}
 				if (bOnlySignature) {
 					return true;
@@ -340,7 +340,7 @@ bool SavedSettings(bool save, bool bOnlySignature)
 void SaveSpoolSettings(MenuItem* menu)
 {
 	tft.fillScreen(TFT_BLACK);
-	SavedSettings(true);
+	SaveLoadSettings(true);
 	DisplayLine(0, "Settings Saved");
 	delay(1000);
 }
@@ -348,7 +348,7 @@ void SaveSpoolSettings(MenuItem* menu)
 // save the array of weights and the current spool to the eeprom
 void LoadSpoolSettings(MenuItem* menu)
 {
-	SavedSettings(false);
+	SaveLoadSettings(false);
 }
 
 // calibrate the scale using a known weight
@@ -397,96 +397,218 @@ void DrawProgressBar(int x, int y, int dx, int dy, int percent)
 	tft.fillRect(x + 1 + fill, y + 1, dx - 2 - fill, dy - 2, TFT_BLACK);
 }
 
-bool RunMenus(int button)
+// insert newlines into a string so it doesn't wrap in the middle of words when displayed
+// existing newlines are honored
+String FormatMultiLine(String& input)
 {
+	String output;
+	int lineWidth = 0;
+	int lastInputSpace = 0;
+	int lastOutputSpace = 0;
+	int lastOutputStart = 0;
+	// look for spaces and add words to the output, when each line is too long start a new line
+	for (int inIx = 0; inIx < input.length(); ++inIx) {
+		switch (input[inIx]) {
+		case '\n':
+			// flush the line
+			output += '\n';
+			lastOutputStart = output.length();
+			break;
+		case ' ':
+			output += input[inIx];
+			// mark the space location so we can go back
+			lastInputSpace = inIx;
+			lastOutputSpace = output.length();
+			break;
+		default:
+			// check the width after adding this character
+			output += input[inIx];
+			lineWidth = tft.textWidth(output.substring(lastOutputStart));
+			if (lineWidth > tft.width()) {
+				// too wide, backup
+				output = output.substring(0, lastOutputSpace);
+				// add a newline to the output
+				output += '\n';
+				inIx = lastInputSpace;
+				lastOutputStart = output.length();
+			}
+			break;
+		}
+	}
+	return output;
+}
+
+void ClearScreen()
+{
+	tft.fillScreen(TFT_BLACK);
+	//ResetTextLines();
+}
+
+// display message on first line, if wait is -1, wait for a key press
+void WriteMessage(String txt, bool error, int wait, bool process)
+{
+	ClearScreen();
+	if (process) {
+		txt = FormatMultiLine(txt);
+	}
+	if (error) {
+		txt = "**" + txt + "**";
+		tft.setTextColor(TFT_RED);
+	}
+	else {
+		tft.setTextColor(menuLineColor);
+	}
+	tft.setCursor(0, tft.fontHeight());
+	tft.setTextWrap(true);
+	tft.print(txt);
+	if (wait == -1) {
+		// wait for a key
+		while (ReadButton() == BTN_NONE)
+			delay(10);
+	}
+	else {
+		delay(wait);
+	}
+	tft.setTextColor(TFT_WHITE);
+}
+
+// do something from the menu depending on the button argument
+// only two buttons are actually handled, SELECT and HELP
+void RunMenus(int button)
+{
+	// save this so we can see if we need to save a new changed value
+	bool lastAutoLoadFlag = bAutoLoadSettings;
 	// see if we got a menu match
 	bool gotmatch = false;
 	int menuix = 0;
 	MenuInfo* oldMenu;
 	bool bExit = false;
 	for (int ix = 0; !gotmatch && MenuStack.top()->menu[ix].op != eTerminate; ++ix) {
-		// see if this one is valid
+		// see if this is one is valid
 		if (!bMenuValid[ix]) {
-			continue;
+			continue;	// and don't increment menuix
 		}
-		if (button == BTN_SELECT && menuix == MenuStack.top()->index) {
+		if (menuix == MenuStack.top()->index) {
 			gotmatch = true;
-			// got one, service it
-			switch (MenuStack.top()->menu[ix].op) {
-			case eText:
-			case eTextInt:
-			case eBool:
+			switch (button) {
+			case BTN_B0_LONG:	// handle help if there is any
+				if (MenuStack.top()->menu[ix].cHelpText) {
+					WriteMessage(MenuStack.top()->menu[ix].cHelpText, false, -1, true);
+				}
 				bMenuChanged = true;
-				if (MenuStack.top()->menu[ix].function) {
-					(*MenuStack.top()->menu[ix].function)(&MenuStack.top()->menu[ix]);
-				}
 				break;
-			case eList:
-				bMenuChanged = true;
-				if (MenuStack.top()->menu[ix].function) {
-					(*MenuStack.top()->menu[ix].function)(&MenuStack.top()->menu[ix]);
-				}
-				bExit = true;
-				// if there is a value, set the min value in it
-				if (MenuStack.top()->menu[ix].value) {
-					*(int*)MenuStack.top()->menu[ix].value = MenuStack.top()->menu[ix].min;
-				}
-				break;
-			case eMenu:
-				if (MenuStack.top()->menu) {
-					oldMenu = MenuStack.top();
-					MenuStack.push(new MenuInfo);
-					MenuStack.top()->menu = oldMenu->menu[ix].menu;
+			case BTN_SELECT:	// handle selection
+				// got one, service it
+				switch (MenuStack.top()->menu[ix].op) {
+				case eTerminate:	// not used, tell compiler
+				case eIfEqual:
+				case eIfIntEqual:
+				case eElse:
+				case eEndif:
+					break;
+				case eText:
+				case eTextInt:
+				//case eTextCurrentFile:
+				case eBool:
+				case eList:
 					bMenuChanged = true;
-					MenuStack.top()->index = 0;
-					MenuStack.top()->offset = 0;
-					// check if the new menu is an eList and if it has a value, if it does, set the index to it
-					if (MenuStack.top()->menu->op == eList && MenuStack.top()->menu->value) {
-						int ix = *(int*)MenuStack.top()->menu->value;
-						MenuStack.top()->index = ix;
-						// adjust offset if necessary
-						if (ix > 4) {
-							MenuStack.top()->offset = ix - 4;
-						}
+					if (MenuStack.top()->menu[ix].change != NULL) {
+						(*MenuStack.top()->menu[ix].change)(&MenuStack.top()->menu[ix], 1);
 					}
+					if (MenuStack.top()->menu[ix].function) {
+						(*MenuStack.top()->menu[ix].function)(&MenuStack.top()->menu[ix]);
+					}
+					if (MenuStack.top()->menu[ix].change != NULL) {
+						(*MenuStack.top()->menu[ix].change)(&MenuStack.top()->menu[ix], -1);
+					}
+					break;
+				//case eMacroList:
+				//	bMenuChanged = true;
+				//	if (MenuStack.top()->menu[ix].change != NULL) {
+				//		(*MenuStack.top()->menu[ix].change)(&MenuStack.top()->menu[ix], 1);
+				//	}
+				//	if (MenuStack.top()->menu[ix].function) {
+				//		(*MenuStack.top()->menu[ix].function)(&MenuStack.top()->menu[ix]);
+				//	}
+				//	if (MenuStack.top()->menu[ix].change != NULL) {
+				//		(*MenuStack.top()->menu[ix].change)(&MenuStack.top()->menu[ix], -1);
+				//	}
+				//	bExit = true;
+				//	// if there is a value, set the min value in it
+				//	if (MenuStack.top()->menu[ix].value) {
+				//		*(int*)MenuStack.top()->menu[ix].value = MenuStack.top()->menu[ix].min;
+				//	}
+				//	break;
+				case eMenu:
+					if (MenuStack.top()->menu) {
+						oldMenu = MenuStack.top();
+						MenuStack.push(new MenuInfo);
+						MenuStack.top()->menu = oldMenu->menu[ix].menu;
+						bMenuChanged = true;
+						MenuStack.top()->index = 0;
+						MenuStack.top()->offset = 0;
+						//Serial.println("change menu");
+						//// check if the new menu is an eMacroList and if it has a value, if it does, set the index to it
+						//if (MenuStack.top()->menu->op == eMacroList && MenuStack.top()->menu->value) {
+						//	int ix = *(int*)MenuStack.top()->menu->value;
+						//	MenuStack.top()->index = ix;
+						//	// adjust offset if necessary
+						//	if (ix > 4) {
+						//		MenuStack.top()->offset = ix - 4;
+						//	}
+						//}
+					}
+					break;
+				//case eBuiltinOptions: // find it in builtins
+				//	if (BuiltInFiles[currentFileIndex.nFileIndex].menu != NULL) {
+				//		MenuStack.top()->index = MenuStack.top()->index;
+				//		MenuStack.push(new MenuInfo);
+				//		MenuStack.top()->menu = BuiltInFiles[currentFileIndex.nFileIndex].menu;
+				//		MenuStack.top()->index = 0;
+				//		MenuStack.top()->offset = 0;
+				//	}
+				//	else {
+				//		WriteMessage("No settings available for:\n" + String(BuiltInFiles[currentFileIndex.nFileIndex].text));
+				//	}
+				//	bMenuChanged = true;
+				//	break;
+				case eExit: // go back a level
+					bExit = true;
+					break;
+				case eReboot:
+					WriteMessage("Rebooting in 2 seconds\nHold button for factory reset", false, 2000);
+					ESP.restart();
+					break;
 				}
-				break;
-			case eExit: // go back a level
-				bExit = true;
-				break;
-			case eReboot:
-				ESP.restart();
-				break;
 			}
 		}
 		++menuix;
 	}
 	// if no match, and we are in a submenu, go back one level, or if bExit is set
 	if (bExit || (!bMenuChanged && MenuStack.size() > 1)) {
-		bMenuChanged = true;
-		if (MenuStack.size() <= 1) {
-			bSettingsMode = false;
-			tft.fillScreen(TFT_BLACK);
-		}
-		else {
-			menuPtr = MenuStack.top();
-			MenuStack.pop();
-			delete menuPtr;
-		}
+		UpMenuLevel(false);
+	}
+	// see if the autoload flag changed
+	if (bAutoLoadSettings != lastAutoLoadFlag) {
+		// the flag is now true, so we should save the current settings
+		SaveLoadSettings(true);
 	}
 }
 
-#define MENU_LINES 7
 // display the menu
-// if MenuStack.top()->index is > MENU_LINES, then shift the lines up by enough to display them
-// remember that we only have room for MENU_LINES lines
+// if MenuStack.top()->index is > nMenuLineCount, then shift the lines up by enough to display them
+// remember that we only have room for nMenuLineCount lines
 void ShowMenu(struct MenuItem* menu)
 {
 	MenuStack.top()->menucount = 0;
 	int y = 0;
 	int x = 0;
-	char line[100];
-	bool skip = false;
+	// load with a false to start with
+	std::stack<bool> skipStack;
+	skipStack.push(false);
+	// this is the active stack level, I.E. which level should be processed
+	int skipLevel = 1;
+	bool bSkipping = false;
 	// loop through the menu
 	for (int menix = 0; menu->op != eTerminate; ++menu, ++menix) {
 		// make sure menu valid vector is big enough
@@ -494,34 +616,52 @@ void ShowMenu(struct MenuItem* menu)
 			bMenuValid.resize(menix + 1);
 		}
 		bMenuValid[menix] = false;
-		switch (menu->op) {
+		switch ((menu->op)) {
 		case eIfEqual:
-			// skip the next one if match, only booleans are handled so far
-			skip = *(bool*)menu->value != (menu->min ? true : false);
+			// skip the next one if match, this is boolean only
+			skipStack.push(*(bool*)menu->value != (menu->min ? true : false));
+			//Serial.println("ifequal test: skip: " + String(skip));
+			if (!bSkipping) {
+				++skipLevel;
+				bSkipping = skipStack.top();
+			}
+			break;
+		case eIfIntEqual:
+			// skip the next one if match, this is int values
+			skipStack.push(*(int*)menu->value != menu->min);
+			//Serial.println("ifIntequal test: skip: " + String(skip));
+			if (!bSkipping) {
+				++skipLevel;
+				bSkipping = skipStack.top();
+			}
 			break;
 		case eElse:
-			skip = !skip;
+			skipStack.top() = !skipStack.top();
 			break;
 		case eEndif:
-			skip = false;
+			skipStack.pop();
+			if (!bSkipping || skipLevel > skipStack.size()) {
+				--skipLevel;
+			}
+			break;
+		default:
 			break;
 		}
-		if (skip) {
+		bSkipping = skipLevel < skipStack.size() ? true : skipStack.top();
+		if (bSkipping) {
 			bMenuValid[menix] = false;
 			continue;
 		}
-		char line[100], xtraline[100];
+		char line[120]{}, xtraline[100]{};
 		// only displayable menu items should be in this switch
 		line[0] = '\0';
 		int val;
-		bool exists;
+		bool exists = false;
 		switch (menu->op) {
 		case eTextInt:
 		case eText:
+		//case eTextCurrentFile:
 			bMenuValid[menix] = true;
-			if (menu->change != NULL) {
-				(*menu->change)(menu, -2);
-			}
 			if (menu->value) {
 				val = *(int*)menu->value;
 				if (menu->op == eText) {
@@ -532,28 +672,39 @@ void ShowMenu(struct MenuItem* menu)
 				}
 			}
 			else {
-				strcpy(line, menu->text);
+				//if (menu->op == eTextCurrentFile) {
+				//	sprintf(line, menu->text, MakeMIWFilename(FileNames[currentFileIndex.nFileIndex], false).c_str());
+				//}
+				//else {
+					strcpy(line, menu->text);
+				//}
 			}
 			// next line
 			++y;
 			break;
-			//case eList:
-			//	valid = true;
-			//	// the list of macro files
-			//	// min holds the macro number
-			//	val = menu->min;
-			//	// see if the macro is there and append the text
-			//	exists = SD.exists("/" + String(val) + ".miw");
-			//	sprintf(line, menu->text, val, exists ? menu->on : menu->off);
-			//	// next line
-			//	++y;
-			//	break;
+		//case eMacroList:
+		//	bMenuValid[menix] = true;
+		//	// the list of macro files
+		//	// min holds the macro number
+		//	val = menu->min;
+		//	//// see if the macro is there and append the text
+		//	//exists = SD.exists("/" + String(val) + ".miw");
+		//	//sprintf(line, menu->text, val, exists ? menu->on : menu->off);
+		//	sprintf(line, menu->text, val, MacroInfo[val].description.c_str());
+		//	// next line
+		//	++y;
+		//	break;
+		case eList:
+			bMenuValid[menix] = true;
+			val = *(int*)menu->value;
+			sprintf(line, menu->text, menu->nameList[val]);
+			// next line
+			++y;
+			break;
 		case eBool:
 			bMenuValid[menix] = true;
 			if (menu->value) {
-				// clean extra bits, just in case
 				bool* pb = (bool*)menu->value;
-				//*pb &= 1;
 				sprintf(line, menu->text, *pb ? menu->on : menu->off);
 			}
 			else {
@@ -562,12 +713,24 @@ void ShowMenu(struct MenuItem* menu)
 			// increment displayable lines
 			++y;
 			break;
+		//case eBuiltinOptions:
+			//// for builtins only show if available
+			//if (BuiltInFiles[currentFileIndex.nFileIndex].menu != NULL) {
+			//	bMenuValid[menix] = true;
+			//	sprintf(line, menu->text, BuiltInFiles[currentFileIndex.nFileIndex].text);
+			//	++y;
+			//}
+			//break;
 		case eMenu:
 		case eExit:
 		case eReboot:
 			bMenuValid[menix] = true;
 			if (menu->value) {
-				sprintf(xtraline, menu->text, *(int*)menu->value);
+				// check for %d or %s in string, be lazy and assume %s if %d not there
+				if (String(menu->text).indexOf("%d") != -1)
+					sprintf(xtraline, menu->text, *(int*)menu->value);
+				else
+					sprintf(xtraline, menu->text, (char*)menu->value);
 			}
 			else {
 				strcpy(xtraline, menu->text);
@@ -577,6 +740,9 @@ void ShowMenu(struct MenuItem* menu)
 			else
 				sprintf(line, "%s%s", (menu->op == eReboot) ? "" : "+", xtraline);
 			++y;
+			//Serial.println("menu text4: " + String(line));
+			break;
+		default:
 			break;
 		}
 		if (strlen(line) && y >= MenuStack.top()->offset) {
@@ -585,21 +751,26 @@ void ShowMenu(struct MenuItem* menu)
 	}
 	MenuStack.top()->menucount = y;
 	// blank the rest of the lines
-	for (int ix = y; ix < MENU_LINES; ++ix) {
+	for (int ix = y; ix < nMenuLineCount; ++ix) {
 		DisplayLine(ix, "");
 	}
 	// show line if menu has been scrolled
 	if (MenuStack.top()->offset > 0)
-		tft.drawLine(0, 0, 5, 0, menuLineActiveColor);
-	// show bottom line if last line is showing
-	if (MenuStack.top()->offset + (MENU_LINES - 1) < MenuStack.top()->menucount - 1)
-		tft.drawLine(0, tft.height() - 1, 5, tft.height() - 1, menuLineActiveColor);
-	else
-		tft.drawLine(0, tft.height() - 1, 5, tft.height() - 1, TFT_BLACK);
+		tft.fillTriangle(0, 0, 2, 0, 0, tft.fontHeight() / 3, TFT_DARKGREY);
+	//tft.drawLine(0, 0, 5, 0, menuLineActiveColor);TFT_DARKGREY
+// show bottom line if last line is showing
+	if (MenuStack.top()->offset + (nMenuLineCount - 1) < MenuStack.top()->menucount - 1) {
+		int ypos = tft.height() - 2 - tft.fontHeight() / 3;
+		tft.fillTriangle(0, ypos, 2, ypos, 0, ypos - tft.fontHeight() / 3, TFT_DARKGREY);
+	}
+	//if (MenuStack.top()->offset + (nMenuLineCount - 1) < MenuStack.top()->menucount - 1)
+	//	tft.drawLine(0, tft.height() - 1, 5, tft.height() - 1, menuLineActiveColor);
+	//else
+	//	tft.drawLine(0, tft.height() - 1, 5, tft.height() - 1, TFT_BLACK);
 	// see if we need to clean up the end, like when the menu shrank due to a choice
-	int extra = MenuStack.top()->menucount - MenuStack.top()->offset - MENU_LINES;
+	int extra = MenuStack.top()->menucount - MenuStack.top()->offset - nMenuLineCount;
 	while (extra < 0) {
-		DisplayLine(MENU_LINES + extra, "");
+		DisplayLine(nMenuLineCount + extra, "");
 		++extra;
 	}
 }
@@ -782,6 +953,24 @@ void SetMenuColors(MenuItem* menu)
 	}
 }
 
+// go up one menu level, return true if anything done
+// set gotoMain to go all the way back to the top
+bool UpMenuLevel(bool gotoMain)
+{
+	if (gotoMain) {
+		while (UpMenuLevel(false))
+			;
+	}
+	else if (MenuStack.size() > 1) {
+		bMenuChanged = true;
+		menuPtr = MenuStack.top();
+		MenuStack.pop();
+		delete menuPtr;
+		return true;
+	}
+	return false;
+}
+
 // handle the menus
 bool HandleMenus()
 {
@@ -809,8 +998,8 @@ bool HandleMenus()
 			MenuStack.top()->offset = 0;
 		}
 		// see if we need to scroll the menu
-		if (MenuStack.top()->index - MenuStack.top()->offset > (MENU_LINES - 1)) {
-			if (MenuStack.top()->offset < MenuStack.top()->menucount - MENU_LINES) {
+		if (MenuStack.top()->index - MenuStack.top()->offset > (nMenuLineCount - 1)) {
+			if (MenuStack.top()->offset < MenuStack.top()->menucount - nMenuLineCount) {
 				++MenuStack.top()->offset;
 			}
 		}
@@ -822,7 +1011,7 @@ bool HandleMenus()
 		if (MenuStack.top()->index < 0) {
 			MenuStack.top()->index = MenuStack.top()->menucount - 1;
 			bMenuChanged = true;
-			MenuStack.top()->offset = MenuStack.top()->menucount - MENU_LINES;
+			MenuStack.top()->offset = MenuStack.top()->menucount - nMenuLineCount;
 		}
 		// see if we need to adjust the offset
 		if (MenuStack.top()->offset && MenuStack.top()->index < MenuStack.top()->offset) {
@@ -851,6 +1040,7 @@ enum CRotaryDialButton::Button ReadButton()
 	enum CRotaryDialButton::Button retValue = BTN_NONE;
 	// read the next button, or NONE if none there
 	retValue = CRotaryDialButton::dequeue();
+	delay(1);
 	return retValue;
 }
 
@@ -859,7 +1049,7 @@ void DisplayMenuLine(int line, int displine, String text)
 {
 	bool hilite = MenuStack.top()->index == line;
 	String mline = (hilite ? "*" : " ") + text;
-	if (displine < MENU_LINES)
+	if (displine < nMenuLineCount)
 		DisplayLine(displine, mline, hilite ? menuLineActiveColor : menuLineColor);
 }
 

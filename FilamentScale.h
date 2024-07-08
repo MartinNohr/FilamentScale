@@ -23,11 +23,20 @@ const int ledChannel = 0;
 const int resolution = 8;
 
 // menu code definitions
-#define BTN_SELECT  CRotaryDialButton::BTN_CLICK
-#define BTN_NONE    CRotaryDialButton::BTN_NONE
-#define BTN_LEFT    CRotaryDialButton::BTN_LEFT
-#define BTN_RIGHT   CRotaryDialButton::BTN_RIGHT
-#define BTN_LONG    CRotaryDialButton::BTN_LONGPRESS
+#define BTN_SELECT          CRotaryDialButton::BTN_CLICK
+#define BTN_NONE            CRotaryDialButton::BTN_NONE
+#define BTN_LEFT            CRotaryDialButton::BTN_LEFT
+#define BTN_LEFT_LONG       CRotaryDialButton::BTN_LEFT_LONG
+#define BTN_RIGHT           CRotaryDialButton::BTN_RIGHT
+#define BTN_RIGHT_LONG      CRotaryDialButton::BTN_RIGHT_LONG
+#define BTN_LONG            CRotaryDialButton::BTN_LONGPRESS
+#define BTN_B0_CLICK        CRotaryDialButton::BTN0_CLICK
+#define BTN_B0_LONG         CRotaryDialButton::BTN0_LONGPRESS
+#define BTN_B1_CLICK        CRotaryDialButton::BTN1_CLICK
+#define BTN_B1_LONG         CRotaryDialButton::BTN1_LONGPRESS
+#define BTN_B2_LONG         CRotaryDialButton::BTN2_LONGPRESS
+#define BTN_LEFT_RIGHT_LONG CRotaryDialButton::BTN_LEFT_RIGHT_LONG
+#define BTN1DIAL_LONGPRESS  CRotaryDialButton::BTN1DIAL_LONGPRESS
 
 // display things
 TFT_eSPI tft = TFT_eSPI();       // Invoke custom library
@@ -72,6 +81,7 @@ const saveValues saveValueList[] = {
 };
 
 // functions
+void WriteMessage(String txt, bool error = false, int wait = 2000, bool process = false);
 bool HandleMenus();
 void ShowMenu(struct MenuItem* menu);
 void GetIntegerValue(MenuItem* menu);
@@ -89,41 +99,50 @@ void SetMenuDisplayWeight(MenuItem* menu, int flag);
 void SetMenuDisplayBrightness(MenuItem* menu, int flag);
 void SetTare(MenuItem* menu = NULL);
 void ResetUsage(MenuItem* menu = NULL);
-bool SavedSettings(bool save, bool bOnlySignature = false);
+bool SaveLoadSettings(bool save, bool bOnlySignature = false);
+
+bool bAutoLoadSettings = false;
 
 enum eDisplayOperation {
+	eTerminate = 0,     // must be last in a menu, (or use {})
 	eText,              // handle text with optional %s value
 	eTextInt,           // handle text with optional %d value
+	//eTextCurrentFile,   // adds current basefilename for %s in string
 	eBool,              // handle bool using %s and on/off values
 	eMenu,              // load another menu
-	eExit,              // closes this menu
-	eIfEqual,           // start skipping menu entries if match with data value
+	eExit,              // closes this menu, handles optional %d or %s in string
+	eIfEqual,           // start skipping menu entries if match with boolean data value
+	eIfIntEqual,        // start skipping menu entries if match with int data value
 	eElse,              // toggles the skipping
 	eEndif,             // ends an if block
-	eBuiltinOptions,    // use an internal settings menu if available, see the internal name,function list below (BuiltInFiles[])
+	//eBuiltinOptions,    // use an internal settings menu if available, see the internal name,function list below (BuiltInFiles[])
 	eReboot,            // reboot the system
-	eList,              // used to make a selection from multiple choices
-	eTerminate,         // must be last in a menu
+	//eMacroList,         // used to make a selection from the macro list
+	eList,              // used to rotate selection from a list of choices
 };
 
+RTC_DATA_ATTR int nMenuLineCount = 7;
+
 std::vector<bool> bMenuValid;   // set to indicate menu item  is valid
-struct MenuItem {
+typedef struct MenuItem {
 	enum eDisplayOperation op;
 	const char* text;                   // text to display
 	union {
 		void(*function)(MenuItem*);     // called on click
 		MenuItem* menu;                 // jump to another menu
+		//BuiltInItem* builtin;           // builtin items
 	};
-	void* value;                  // associated variable
-	long min;                           // the minimum value, also used for ifequal
-	long max;                           // the maximum value, also size to compare for if
+	const void* value;                  // associated variable
+	long min;                           // the minimum value, also used for ifequal, min length for string
+	long max;                           // the maximum value, also size to compare for if, max length for string
 	int decimals;                       // 0 for int, 1 for 0.1
-	char* on;                           // text for boolean true
-	char* off;                          // text for boolean false
-	// flag is 1 for first time, 0 for changes, and -1 for last call, and -2 for display text call
-	void(*change)(MenuItem*, int flag); // call for each change, example: brightness change show effect
+	const char* on;                     // text for boolean true
+	const char* off;                    // text for boolean false
+	// flag is 1 for first time, 0 for changes, and -1 for last call, bools only call this with -1
+	void(*change)(MenuItem*, int flag); // call for each change, example: brightness change show effect, can be NULL
+	const char** nameList;              // used for multichoice of items, example wiring mode, .max should be count-1 and .min=0
+	const char* cHelpText;              // a place to put some menu help
 };
-typedef MenuItem MenuItem;
 
 MenuItem SpoolMenu[] = {
 	{eExit,"Previous Menu"},
@@ -161,12 +180,11 @@ MenuItem SystemMenu[] = {
 	{eTerminate}
 };
 MenuItem MainMenu[] = {
-	{eExit,"Main Screen"},
+	{eExit,"Main (Long Press)"},
 	{eText,"Reset Usage Rate",ResetUsage},
 	{eMenu,"Spool Settings",{.menu = SpoolMenu}},
 	{eMenu,"Scale Settings",{.menu = ScaleMenu}},
 	{eMenu,"System Settings",{.menu = SystemMenu}},
-	{eExit,"Main Screen"},
 	// make sure this one is last
 	{eTerminate}
 };
